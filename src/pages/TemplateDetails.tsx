@@ -46,7 +46,7 @@ const MOCK_TEMPLATE = {
 export function TemplateDetails() {
   const { id } = useParams();
   const { t } = useLanguage();
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [activePreview, setActivePreview] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
@@ -68,9 +68,7 @@ export function TemplateDetails() {
   };
 
   const handleMockLogin = () => {
-    login('test@example.com');
-    setShowAuthModal(false);
-    setShowOrderModal(true);
+    navigate('/auth');
   };
 
   const currentPayment = paymentOption === 'min' ? minAdvanceAmount : paymentOption === 'full' ? MOCK_TEMPLATE.startingPrice : customAmount;

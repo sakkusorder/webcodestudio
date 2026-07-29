@@ -54,6 +54,9 @@ export function Layout({ children }: { children: ReactNode }) {
                 <Link to="/dashboard" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
                   {t('nav.dashboard')}
                 </Link>
+                <Link to="/todos" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
+                  Todos
+                </Link>
               </nav>
 
               <div className="h-6 w-px bg-neutral-200"></div>
@@ -121,6 +124,9 @@ export function Layout({ children }: { children: ReactNode }) {
               </Link>
               <Link to="/dashboard" className="text-base font-semibold text-neutral-700 hover:text-indigo-600">
                 {t('nav.dashboard')}
+              </Link>
+              <Link to="/todos" className="text-base font-semibold text-neutral-700 hover:text-indigo-600">
+                Todos
               </Link>
             </nav>
             <div className="flex flex-col gap-4">

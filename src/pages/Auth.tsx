@@ -1,57 +1,154 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, Lock, User, ArrowRight, ShieldCheck, Github } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { Mail, Lock, User, ArrowRight, ShieldCheck, KeyRound } from 'lucide-react';
+import { supabase } from '../utils/supabase';
+
+type AuthMode = 'login' | 'register' | 'forgot' | 'verify-signup' | 'verify-forgot' | 'reset-password';
 
 export function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [otp, setOtp] = useState('');
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const { login, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from?.pathname || '/dashboard';
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && mode !== 'reset-password') {
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate, from]);
+  }, [isAuthenticated, navigate, from, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setIsLoading(true);
 
     try {
-      if (isLogin) {
-        await login(email, password);
-      } else {
-        // Register flow
-        const response = await fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fullName, email, password, confirmPassword: password })
+      if (mode === 'login') {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password
         });
         
-        if (response.ok) {
-          // Auto login after register
-          await login(email, password);
-        } else {
-          const data = await response.json();
-          setError(data.error || 'Registration failed');
+        if (error) {
+          if (error.message.includes('Invalid login credentials')) {
+             throw new Error('We could not find an account with that email and password. Please check your credentials or create a new account.');
+          }
+          throw error;
         }
+      } else if (mode === 'register') {
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name: fullName
+            }
+          }
+        });
+        if (error) throw error;
+        
+        setSuccess('Registration successful! Please check your email for a 6-digit verification code.');
+        setMode('verify-signup');
+      } else if (mode === 'verify-signup') {
+        const { error } = await supabase.auth.verifyOtp({
+          email,
+          token: otp,
+          type: 'signup'
+        });
+        if (error) throw error;
+        
+        // After verify, user is usually logged in automatically.
+      } else if (mode === 'forgot') {
+        // Send OTP to email for password reset
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        if (error) throw error;
+        
+        setSuccess('Password reset code sent to your email.');
+        setMode('verify-forgot');
+      } else if (mode === 'verify-forgot') {
+        const { error } = await supabase.auth.verifyOtp({
+          email,
+          token: otp,
+          type: 'recovery'
+        });
+        if (error) throw error;
+        
+        setSuccess('Code verified! Please enter your new password.');
+        setMode('reset-password');
+      } else if (mode === 'reset-password') {
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+        const { error } = await supabase.auth.updateUser({
+          password
+        });
+        if (error) throw error;
+        
+        setSuccess('Password updated successfully! You can now log in.');
+        setMode('login');
+        setPassword('');
+        setConfirmPassword('');
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const renderHeader = () => {
+    switch (mode) {
+      case 'login': return 'Welcome back';
+      case 'register': return 'Create your account';
+      case 'forgot': return 'Reset your password';
+      case 'verify-signup': 
+      case 'verify-forgot': return 'Enter verification code';
+      case 'reset-password': return 'Set new password';
+    }
+  };
+
+  const renderSubHeader = () => {
+    if (mode === 'login') {
+      return (
+        <>
+          Don't have an account?{' '}
+          <button onClick={() => setMode('register')} type="button" className="font-bold text-indigo-600 hover:text-indigo-500 transition-colors">
+            Sign up
+          </button>
+        </>
+      );
+    } else if (mode === 'register') {
+      return (
+        <>
+          Already have an account?{' '}
+          <button onClick={() => setMode('login')} type="button" className="font-bold text-indigo-600 hover:text-indigo-500 transition-colors">
+            Log in
+          </button>
+        </>
+      );
+    } else if (mode === 'forgot' || mode === 'verify-signup' || mode === 'verify-forgot' || mode === 'reset-password') {
+      return (
+        <button onClick={() => setMode('login')} type="button" className="font-bold text-indigo-600 hover:text-indigo-500 transition-colors">
+          Back to login
+        </button>
+      );
     }
   };
 
@@ -63,29 +160,50 @@ export function Auth() {
             <span className="text-3xl font-black">W</span>
           </div>
           <h2 className="text-center text-3xl font-black text-neutral-900 tracking-tight">
-            {isLogin ? 'Welcome back' : 'Create your account'}
+            {renderHeader()}
           </h2>
           <p className="mt-2 text-center text-sm text-neutral-500 font-medium">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button 
-              onClick={() => setIsLogin(!isLogin)} 
-              className="font-bold text-indigo-600 hover:text-indigo-500 transition-colors"
-            >
-              {isLogin ? 'Sign up' : 'Log in'}
-            </button>
+            {renderSubHeader()}
           </p>
         </div>
 
         {error && (
-          <div className="bg-rose-50 text-rose-600 p-4 rounded-xl text-sm font-bold border border-rose-100 flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5" />
-            {error}
+          <div className="bg-rose-50 text-rose-600 p-4 rounded-xl text-sm font-bold border border-rose-100 flex items-start gap-2">
+            <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+        
+        {success && (
+          <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl text-sm font-bold border border-emerald-100 flex items-start gap-2">
+            <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" />
+            <span>{success}</span>
           </div>
         )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            {!isLogin && (
+            
+            {(mode === 'login' || mode === 'register' || mode === 'forgot') && (
+              <div>
+                <label className="block text-sm font-bold text-neutral-700 mb-1">Email address</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-neutral-400" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl bg-neutral-50 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent font-medium sm:text-sm transition-all"
+                    placeholder="you@example.com"
+                  />
+                </div>
+              </div>
+            )}
+
+            {mode === 'register' && (
               <div>
                 <label className="block text-sm font-bold text-neutral-700 mb-1">Full Name</label>
                 <div className="relative">
@@ -104,42 +222,70 @@ export function Auth() {
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-bold text-neutral-700 mb-1">Email address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-neutral-400" />
+            {(mode === 'login' || mode === 'register' || mode === 'reset-password') && (
+              <div>
+                <label className="block text-sm font-bold text-neutral-700 mb-1">
+                  {mode === 'reset-password' ? 'New Password' : 'Password'}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-neutral-400" />
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl bg-neutral-50 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent font-medium sm:text-sm transition-all"
+                    placeholder="••••••••"
+                  />
                 </div>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl bg-neutral-50 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent font-medium sm:text-sm transition-all"
-                  placeholder="you@example.com"
-                />
               </div>
-            </div>
+            )}
+            
+            {(mode === 'register' || mode === 'reset-password') && (
+              <div>
+                <label className="block text-sm font-bold text-neutral-700 mb-1">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-neutral-400" />
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl bg-neutral-50 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent font-medium sm:text-sm transition-all"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+            )}
 
-            <div>
-              <label className="block text-sm font-bold text-neutral-700 mb-1">Password</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-neutral-400" />
+            {(mode === 'verify-signup' || mode === 'verify-forgot') && (
+              <div>
+                <label className="block text-sm font-bold text-neutral-700 mb-1">6-Digit Code</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <KeyRound className="h-5 w-5 text-neutral-400" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl bg-neutral-50 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent font-medium sm:text-sm transition-all tracking-[0.5em] font-mono text-center"
+                    placeholder="000000"
+                    maxLength={6}
+                  />
                 </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl bg-neutral-50 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent font-medium sm:text-sm transition-all"
-                  placeholder="••••••••"
-                />
               </div>
-            </div>
+            )}
           </div>
 
-          {isLogin && (
+          {mode === 'login' && (
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
@@ -154,9 +300,9 @@ export function Auth() {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-bold text-indigo-600 hover:text-indigo-500">
+                <button type="button" onClick={() => setMode('forgot')} className="font-bold text-indigo-600 hover:text-indigo-500">
                   Forgot password?
-                </a>
+                </button>
               </div>
             </div>
           )}
@@ -171,7 +317,11 @@ export function Auth() {
                 'Processing...'
               ) : (
                 <>
-                  {isLogin ? 'Sign in' : 'Create account'}
+                  {mode === 'login' && 'Sign in'}
+                  {mode === 'register' && 'Create account'}
+                  {mode === 'forgot' && 'Send code'}
+                  {(mode === 'verify-signup' || mode === 'verify-forgot') && 'Verify code'}
+                  {mode === 'reset-password' && 'Update password'}
                   <ArrowRight className="ml-2 -mr-1 h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity" />
                 </>
               )}
@@ -182,3 +332,4 @@ export function Auth() {
     </div>
   );
 }
+

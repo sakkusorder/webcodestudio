@@ -35,7 +35,7 @@ const PRIORITIES = ['Normal', 'Urgent', 'Very Urgent'];
 
 export function CustomProject() {
   const { t } = useLanguage();
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -86,9 +86,7 @@ export function CustomProject() {
   };
 
   const handleMockLogin = () => {
-    login(formData.email || 'test@example.com');
-    setShowAuthModal(false);
-    processSubmission();
+    navigate('/auth');
   };
 
   const processSubmission = async () => {
