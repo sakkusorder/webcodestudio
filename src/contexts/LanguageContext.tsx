@@ -1,0 +1,200 @@
+import { createContext, useContext, useState, ReactNode } from 'react';
+
+type Language = 'en' | 'bn';
+
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+}
+
+const translations: Record<Language, Record<string, string>> = {
+  en: {
+    'nav.templates': 'Templates',
+    'nav.dashboard': 'Dashboard',
+    'nav.login': 'Log In',
+    'hero.title': 'Web Code Studio',
+    'hero.subtitle': 'The ultimate platform for premium website templates, custom development, and seamless project management.',
+    'hero.cta': 'Explore Templates',
+    'hero.secondary': 'Request Custom Project',
+    'features.title': 'Everything you need to launch online',
+    'features.templates': 'Browse real website templates',
+    'features.custom': 'Order completely custom websites',
+    'features.track': 'Track project progress seamlessly',
+    'features.chat': 'Chat directly with developers',
+    'footer.rights': '© 2026 Web Code Studio. All rights reserved.',
+    'templates.title': 'Premium Templates',
+    'templates.subtitle': 'Browse our collection of production-ready website templates.',
+    'templates.view_demo': 'Live Demo',
+    'templates.order': 'Order Similar',
+    'dashboard.title': 'Client Portal',
+    'dashboard.projects': 'Active Projects',
+    'dashboard.invoices': 'Invoices',
+    'dashboard.chat': 'Messages',
+    'nav.search': 'Search Website...',
+    'nav.register': 'Register',
+    'slider.1.title': 'Professional Website Development',
+    'slider.1.btn': 'Browse Websites',
+    'slider.2.title': 'Custom Website Development',
+    'slider.2.btn': 'Create Website',
+    'slider.3.title': 'E-commerce Solutions',
+    'slider.3.btn': 'View Demo',
+    'slider.4.title': 'Business Website',
+    'slider.4.btn': 'Explore',
+    'slider.5.title': 'Website Maintenance',
+    'slider.5.btn': 'Learn More',
+    'custom.title': 'Need a Custom Website?',
+    'custom.desc': 'Tell us your requirements and we\'ll build your dream website.',
+    'custom.btn': 'Create Custom Website',
+    'categories.title': 'Explore Categories',
+    'details.back': 'Back to Templates',
+    'details.share': 'Share',
+    'details.favorite': 'Save',
+    'details.live_demo': 'Live Demo',
+    'details.order': 'Order Similar Website',
+    'details.info.tech': 'Technology',
+    'details.info.delivery': 'Estimated Delivery',
+    'details.info.price': 'Starting Price',
+    'details.info.advance': 'Min. Advance',
+    'details.info.updated': 'Last Updated',
+    'details.features': 'Premium Features',
+    'details.included': 'What\'s Included',
+    'auth.required': 'Login Required',
+    'auth.required_desc': 'Please login or create an account to continue your website order.',
+    'auth.login': 'Login',
+    'auth.register': 'Register',
+    'auth.close': 'Close',
+    'order.title': 'Order Custom Website',
+    'order.desc': 'Fill out the requirements for your project based on this template.',
+    'order.form.desc': 'Project Description',
+    'order.form.features': 'Extra Features',
+    'order.form.budget': 'Estimated Budget',
+    'order.form.ref': 'Reference Website (Optional)',
+    'order.form.notes': 'Additional Notes',
+    'order.payment.title': 'Payment Details',
+    'order.payment.min': 'Minimum Advance',
+    'order.payment.full': 'Full Payment',
+    'order.payment.custom': 'Custom Amount',
+    'order.summary.price': 'Website Price',
+    'order.summary.paying': 'You are paying',
+    'order.summary.remaining': 'Remaining Balance',
+    'order.submit': 'Confirm Order & Pay',
+    'custom_project.title': 'Create Your Custom Website',
+    'custom_project.subtitle': "Tell us your ideas and we'll build a professional website for you.",
+    'custom_project.step1': 'Client Information',
+    'custom_project.step2': 'Project Information',
+    'custom_project.step3': 'Required Features',
+    'custom_project.step4': 'Design Reference',
+    'custom_project.step5': 'Budget & Timeline',
+    'custom_project.summary': 'Project Summary',
+    'custom_project.next': 'Next Step',
+    'custom_project.prev': 'Previous Step',
+    'custom_project.submit': 'Submit Request',
+  },
+  bn: {
+    'nav.templates': 'টেমপ্লেটসমূহ',
+    'nav.dashboard': 'ড্যাশবোর্ড',
+    'nav.login': 'লগ ইন',
+    'hero.title': 'ওয়েব কোড স্টুডিও',
+    'hero.subtitle': 'প্রিমিয়াম ওয়েবসাইট টেমপ্লেট, কাস্টম ডেভেলপমেন্ট এবং প্রোজেক্ট ম্যানেজমেন্টের জন্য সেরা প্ল্যাটফর্ম।',
+    'hero.cta': 'টেমপ্লেট দেখুন',
+    'hero.secondary': 'কাস্টম প্রোজেক্ট অর্ডার করুন',
+    'features.title': 'অনলাইনে লঞ্চ করার জন্য প্রয়োজনীয় সবকিছু',
+    'features.templates': 'রিয়েল ওয়েবসাইট টেমপ্লেট ব্রাউজ করুন',
+    'features.custom': 'সম্পূর্ণ কাস্টম ওয়েবসাইট অর্ডার করুন',
+    'features.track': 'প্রোজেক্টের অগ্রগতি ট্র্যাক করুন',
+    'features.chat': 'সরাসরি ডেভেলপারদের সাথে চ্যাট করুন',
+    'footer.rights': '© ২০২৬ ওয়েব কোড স্টুডিও। সর্বস্বত্ব সংরক্ষিত।',
+    'templates.title': 'প্রিমিয়াম টেমপ্লেটসমূহ',
+    'templates.subtitle': 'আমাদের প্রোডাকশন-রেডি ওয়েবসাইট টেমপ্লেটের সংগ্রহ ব্রাউজ করুন।',
+    'templates.view_demo': 'লাইভ ডেমো',
+    'templates.order': 'অর্ডার করুন',
+    'dashboard.title': 'ক্লায়েন্ট পোর্টাল',
+    'dashboard.projects': 'চলমান প্রোজেক্ট',
+    'dashboard.invoices': 'ইনভয়েস',
+    'dashboard.chat': 'মেসেজ',
+    'nav.search': 'ওয়েবসাইট খুঁজুন...',
+    'nav.register': 'রেজিস্টার',
+    'slider.1.title': 'প্রফেশনাল ওয়েবসাইট ডেভেলপমেন্ট',
+    'slider.1.btn': 'ওয়েবসাইট দেখুন',
+    'slider.2.title': 'কাস্টম ওয়েবসাইট ডেভেলপমেন্ট',
+    'slider.2.btn': 'ওয়েবসাইট তৈরি করুন',
+    'slider.3.title': 'ই-কমার্স সমাধান',
+    'slider.3.btn': 'ডেমো দেখুন',
+    'slider.4.title': 'বিজনেস ওয়েবসাইট',
+    'slider.4.btn': 'এক্সপ্লোর করুন',
+    'slider.5.title': 'ওয়েবসাইট মেইনটেন্যান্স',
+    'slider.5.btn': 'আরও জানুন',
+    'custom.title': 'একটি কাস্টম ওয়েবসাইট প্রয়োজন?',
+    'custom.desc': 'আপনার প্রয়োজনীয়তা জানান এবং আমরা আপনার স্বপ্নের ওয়েবসাইট তৈরি করব।',
+    'custom.btn': 'কাস্টম ওয়েবসাইট তৈরি করুন',
+    'categories.title': 'ক্যাটাগরি এক্সপ্লোর করুন',
+    'details.back': 'টেমপ্লেটে ফিরে যান',
+    'details.share': 'শেয়ার',
+    'details.favorite': 'সেভ করুন',
+    'details.live_demo': 'লাইভ ডেমো',
+    'details.order': 'অর্ডার করুন',
+    'details.info.tech': 'টেকনোলজি',
+    'details.info.delivery': 'আনুমানিক ডেলিভারি',
+    'details.info.price': 'প্রারম্ভিক মূল্য',
+    'details.info.advance': 'সর্বনিম্ন অগ্রিম',
+    'details.info.updated': 'সর্বশেষ আপডেট',
+    'details.features': 'প্রিমিয়াম ফিচারসমূহ',
+    'details.included': 'যা যা অন্তর্ভুক্ত থাকছে',
+    'auth.required': 'লগইন প্রয়োজন',
+    'auth.required_desc': 'আপনার ওয়েবসাইট অর্ডার চালিয়ে যেতে অনুগ্রহ করে লগইন করুন বা একটি অ্যাকাউন্ট তৈরি করুন।',
+    'auth.login': 'লগইন',
+    'auth.register': 'রেজিস্টার',
+    'auth.close': 'বন্ধ করুন',
+    'order.title': 'কাস্টম ওয়েবসাইট অর্ডার করুন',
+    'order.desc': 'এই টেমপ্লেটের উপর ভিত্তি করে আপনার প্রোজেক্টের প্রয়োজনীয়তাগুলো পূরণ করুন।',
+    'order.form.desc': 'প্রোজেক্টের বিবরণ',
+    'order.form.features': 'অতিরিক্ত ফিচার',
+    'order.form.budget': 'আনুমানিক বাজেট',
+    'order.form.ref': 'রেফারেন্স ওয়েবসাইট (ঐচ্ছিক)',
+    'order.form.notes': 'অতিরিক্ত নোট',
+    'order.payment.title': 'পেমেন্টের বিবরণ',
+    'order.payment.min': 'সর্বনিম্ন অগ্রিম',
+    'order.payment.full': 'সম্পূর্ণ পেমেন্ট',
+    'order.payment.custom': 'কাস্টম পরিমাণ',
+    'order.summary.price': 'ওয়েবসাইটের মূল্য',
+    'order.summary.paying': 'আপনি প্রদান করছেন',
+    'order.summary.remaining': 'বাকি ব্যালেন্স',
+    'order.submit': 'অর্ডার কনফার্ম করুন ও পে করুন',
+    'custom_project.title': 'আপনার কাস্টম ওয়েবসাইট তৈরি করুন',
+    'custom_project.subtitle': "আপনার আইডিয়া আমাদের জানান এবং আমরা আপনার জন্য একটি প্রফেশনাল ওয়েবসাইট তৈরি করব।",
+    'custom_project.step1': 'ক্লায়েন্টের তথ্য',
+    'custom_project.step2': 'প্রোজেক্টের তথ্য',
+    'custom_project.step3': 'প্রয়োজনীয় ফিচারসমূহ',
+    'custom_project.step4': 'ডিজাইন রেফারেন্স',
+    'custom_project.step5': 'বাজেট ও সময়সীমা',
+    'custom_project.summary': 'প্রোজেক্টের সারসংক্ষেপ',
+    'custom_project.next': 'পরবর্তী ধাপ',
+    'custom_project.prev': 'পূর্ববর্তী ধাপ',
+    'custom_project.submit': 'অনুরোধ জমা দিন',
+  }
+};
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguage] = useState<Language>('en');
+
+  const t = (key: string) => {
+    return translations[language]?.[key] || key;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+}
