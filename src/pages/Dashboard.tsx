@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FolderKanban, Receipt, MessageSquare, 
   ChevronRight, CheckCircle2, Clock, Settings, 
   Upload, Bell, Search, User, CreditCard, LifeBuoy, 
-  Download, PlusCircle, LayoutTemplate, Send, Paperclip, CheckCircle
+  Download, PlusCircle, LayoutTemplate, Send, Paperclip, CheckCircle,
+  FileText
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
