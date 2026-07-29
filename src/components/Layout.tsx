@@ -170,8 +170,13 @@ export function Layout({ children }: { children: ReactNode }) {
       <main className="flex-grow">{children}</main>
 
       <footer className="bg-white border-t border-neutral-200 py-12 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-neutral-500 text-sm">
-          {t('footer.rights')}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
+          <div className="text-neutral-500 text-sm">
+            {t('footer.rights')}
+          </div>
+          <div className="text-[#666666] font-normal text-[12px] mt-1">
+            Developed by <span onClick={() => navigate('/wcs-admin-verify')} className="cursor-pointer">Web Code Studio</span>
+          </div>
         </div>
       </footer>
     </div>

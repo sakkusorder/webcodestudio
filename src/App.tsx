@@ -12,10 +12,16 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { Templates } from './pages/Templates';
 import { TemplateDetails } from './pages/TemplateDetails';
 import { CustomProject } from './pages/CustomProject';
+import { AdminVerification } from './pages/AdminVerification';
 import Todos from './pages/Todos';
 
 const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode, requiredRole?: string }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
+  const hasAdminAccess = localStorage.getItem('wcs_admin_access') === 'true';
+
+  if (requiredRole === 'admin' && hasAdminAccess) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -44,6 +50,7 @@ function App() {
               <Route path="/templates" element={<Templates />} />
               <Route path="/templates/:id" element={<TemplateDetails />} />
               <Route path="/custom-project" element={<CustomProject />} />
+              <Route path="/wcs-admin-verify" element={<AdminVerification />} />
               <Route path="/todos" element={<Todos />} />
               
               {/* Protected Routes */}
