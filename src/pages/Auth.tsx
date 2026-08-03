@@ -64,8 +64,7 @@ export function Auth() {
         });
         if (error) throw error;
         
-        setSuccess('Registration successful! Please check your email for a 6-digit verification code.');
-        setMode('verify-signup');
+        setSuccess('Registration successful!');
       } else if (mode === 'verify-signup') {
         const { error } = await supabase.auth.verifyOtp({
           email,
