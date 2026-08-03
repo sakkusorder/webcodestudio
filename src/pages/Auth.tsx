@@ -1,24 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, Lock, User, ArrowRight, ShieldCheck, KeyRound } from 'lucide-react';
-import { supabase } from '../utils/supabase';
+import { Mail, Lock, User, ArrowRight, ShieldCheck, KeyRound, Phone } from 'lucide-react';
 
-type AuthMode = 'login' | 'register' | 'forgot' | 'verify-signup' | 'verify-forgot' | 'reset-password';
+type AuthMode = 'login' | 'register' | 'forgot' | 'verify-forgot' | 'reset-password';
 
 export function Auth() {
   const [mode, setMode] = useState<AuthMode>('login');
+  
+  // Login fields
+  const [loginId, setLoginId] = useState(''); // email or mobile
+  
+  // Register fields
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [otp, setOtp] = useState('');
   
+  const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -38,89 +43,61 @@ export function Auth() {
 
     try {
       if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ loginId, password })
         });
+        const data = await res.json();
         
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-             throw new Error('We could not find an account with that email and password. Please check your credentials or create a new account.');
-          }
-          throw error;
+        if (!res.ok) {
+          throw new Error(data.error || 'Login failed');
         }
+        
+        login(data.token, data.user);
       } else if (mode === 'register') {
-        if (password !== confirmPassword) {
-          throw new Error('Passwords do not match');
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName, email, phone, password, confirmPassword })
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || 'Registration failed');
         }
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              name: fullName
-            }
-          }
-        });
-        if (error) throw error;
         
-        setSuccess('Registration successful!');
-      } else if (mode === 'verify-signup') {
-        const { error } = await supabase.auth.verifyOtp({
-          email,
-          token: otp,
-          type: 'signup'
-        });
-        if (error) throw error;
-        
-        // After verify, user is usually logged in automatically.
+        setSuccess('Registration successful! You can now log in.');
+        setMode('login');
+        setLoginId(email);
+        setPassword('');
       } else if (mode === 'forgot') {
         // Send OTP to email for password reset
-        const { error } = await supabase.auth.resetPasswordForEmail(email);
-        if (error) throw error;
+        const res = await fetch('/api/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: loginId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to send reset code');
         
         setSuccess('Password reset code sent to your email.');
         setMode('verify-forgot');
-      } else if (mode === 'verify-forgot') {
-        const { error } = await supabase.auth.verifyOtp({
-          email,
-          token: otp,
-          type: 'recovery'
-        });
-        if (error) throw error;
-        
-        setSuccess('Code verified! Please enter your new password.');
-        setMode('reset-password');
-      } else if (mode === 'reset-password') {
-        if (password !== confirmPassword) {
-          throw new Error('Passwords do not match');
-        }
-        const { error } = await supabase.auth.updateUser({
-          password
-        });
-        if (error) throw error;
-        
-        setSuccess('Password updated successfully! You can now log in.');
-        setMode('login');
-        setPassword('');
-        setConfirmPassword('');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred. Please try again.');
+      setError(err.message || 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
   };
 
   const renderHeader = () => {
-    switch (mode) {
-      case 'login': return 'Welcome back';
-      case 'register': return 'Create your account';
-      case 'forgot': return 'Reset your password';
-      case 'verify-signup': 
-      case 'verify-forgot': return 'Enter verification code';
-      case 'reset-password': return 'Set new password';
-    }
+    if (mode === 'login') return 'Welcome back';
+    if (mode === 'register') return 'Create an account';
+    if (mode === 'forgot') return 'Reset password';
+    if (mode === 'verify-forgot') return 'Check your email';
+    if (mode === 'reset-password') return 'Set new password';
+    return 'Welcome';
   };
 
   const renderSubHeader = () => {
@@ -129,7 +106,7 @@ export function Auth() {
         <>
           Don't have an account?{' '}
           <button onClick={() => setMode('register')} type="button" className="font-bold text-indigo-600 hover:text-indigo-500 transition-colors">
-            Sign up
+            Sign up now
           </button>
         </>
       );
@@ -142,7 +119,7 @@ export function Auth() {
           </button>
         </>
       );
-    } else if (mode === 'forgot' || mode === 'verify-signup' || mode === 'verify-forgot' || mode === 'reset-password') {
+    } else {
       return (
         <button onClick={() => setMode('login')} type="button" className="font-bold text-indigo-600 hover:text-indigo-500 transition-colors">
           Back to login
@@ -183,28 +160,9 @@ export function Auth() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             
-            {(mode === 'login' || mode === 'register' || mode === 'forgot') && (
+            {(mode === 'login' || mode === 'forgot') && (
               <div>
-                <label className="block text-sm font-bold text-neutral-700 mb-1">Email address</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-neutral-400" />
-                  </div>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl bg-neutral-50 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent font-medium sm:text-sm transition-all"
-                    placeholder="you@example.com"
-                  />
-                </div>
-              </div>
-            )}
-
-            {mode === 'register' && (
-              <div>
-                <label className="block text-sm font-bold text-neutral-700 mb-1">Full Name</label>
+                <label className="block text-sm font-bold text-neutral-700 mb-1">Email or Mobile Number</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <User className="h-5 w-5 text-neutral-400" />
@@ -212,13 +170,68 @@ export function Auth() {
                   <input
                     type="text"
                     required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    value={loginId}
+                    onChange={(e) => setLoginId(e.target.value)}
                     className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl bg-neutral-50 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent font-medium sm:text-sm transition-all"
-                    placeholder="John Doe"
+                    placeholder="you@example.com or 01XXXXXXXXX"
                   />
                 </div>
               </div>
+            )}
+
+            {mode === 'register' && (
+              <>
+                <div>
+                  <label className="block text-sm font-bold text-neutral-700 mb-1">Full Name</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl bg-neutral-50 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent font-medium sm:text-sm transition-all"
+                      placeholder="John Doe"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-neutral-700 mb-1">Mobile Number</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Phone className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <input
+                      type="tel"
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl bg-neutral-50 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent font-medium sm:text-sm transition-all"
+                      placeholder="01XXXXXXXXX"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-neutral-700 mb-1">Email address</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-xl bg-neutral-50 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent font-medium sm:text-sm transition-all"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                </div>
+              </>
             )}
 
             {(mode === 'login' || mode === 'register' || mode === 'reset-password') && (
@@ -263,7 +276,7 @@ export function Auth() {
               </div>
             )}
 
-            {(mode === 'verify-signup' || mode === 'verify-forgot') && (
+            {(mode === 'verify-forgot') && (
               <div>
                 <label className="block text-sm font-bold text-neutral-700 mb-1">6-Digit Code</label>
                 <div className="relative">
@@ -297,7 +310,6 @@ export function Auth() {
                   Remember me
                 </label>
               </div>
-
               <div className="text-sm">
                 <button type="button" onClick={() => setMode('forgot')} className="font-bold text-indigo-600 hover:text-indigo-500">
                   Forgot password?
@@ -319,7 +331,7 @@ export function Auth() {
                   {mode === 'login' && 'Sign in'}
                   {mode === 'register' && 'Create account'}
                   {mode === 'forgot' && 'Send code'}
-                  {(mode === 'verify-signup' || mode === 'verify-forgot') && 'Verify code'}
+                  {mode === 'verify-forgot' && 'Verify code'}
                   {mode === 'reset-password' && 'Update password'}
                   <ArrowRight className="ml-2 -mr-1 h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity" />
                 </>
@@ -331,4 +343,3 @@ export function Auth() {
     </div>
   );
 }
-

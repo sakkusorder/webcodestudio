@@ -1,0 +1,14 @@
+--- src/contexts/AuthContext.tsx
++++ src/contexts/AuthContext.tsx
+@@ -59,7 +59,10 @@
+ 
+   const login = (token: string, userData: User) => {
+     localStorage.setItem('token', token);
+-    setUser(userData);
++    setUser({
++      ...userData,
++      name: userData.name || (userData as any).fullName
++    });
+   };
+ 
+   const logout = async () => {
