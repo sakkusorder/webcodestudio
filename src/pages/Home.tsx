@@ -91,7 +91,7 @@ export function Home() {
   return (
     <div className="w-full bg-neutral-50 pb-20">
       {/* Hero Slider */}
-      <div className="relative w-full h-[600px] overflow-hidden bg-neutral-900">
+      <div className="relative w-full h-[280px] md:h-[600px] overflow-hidden bg-neutral-900">
         {slides.map((slide, index) => (
           <div
             key={slide.id}
@@ -108,95 +108,81 @@ export function Home() {
             />
             
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-4">
-              <div className="mb-6 transform transition-all duration-700 translate-y-0 opacity-100 drop-shadow-lg">
+              <div className="mb-4 md:mb-6 transform transition-all duration-700 translate-y-0 opacity-100 drop-shadow-lg scale-75 md:scale-100">
                 {slide.icon}
               </div>
-              <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-8 max-w-4xl drop-shadow-xl leading-tight">
+              <h1 className="text-2xl md:text-6xl font-black tracking-tight text-white mb-6 md:mb-8 max-w-4xl drop-shadow-xl leading-tight">
                 {t(slide.titleKey)}
               </h1>
               <button 
                 onClick={scrollToCategories}
-                className="flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-500 transition-all shadow-[0_0_40px_rgba(79,70,229,0.4)] hover:shadow-[0_0_60px_rgba(79,70,229,0.6)] transform hover:-translate-y-1"
+                className="flex items-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-indigo-600 text-white text-sm md:text-base font-bold rounded-full hover:bg-indigo-500 transition-all shadow-[0_0_40px_rgba(79,70,229,0.4)] hover:shadow-[0_0_60px_rgba(79,70,229,0.6)] transform hover:-translate-y-1"
               >
                 সকল ক্যাটাগরি দেখুন
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </div>
           </div>
         ))}
         
         {/* Slider Controls */}
-        <div className="absolute z-30 bottom-8 left-0 right-0 flex justify-center items-center gap-4">
-          <button onClick={prevSlide} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+        <div className="absolute z-30 bottom-4 md:bottom-8 left-0 right-0 flex justify-center items-center gap-3 md:gap-4">
+          <button onClick={prevSlide} className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-colors">
+            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
           </button>
           <div className="flex gap-2">
             {slides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  index === currentSlide ? 'bg-indigo-500 w-8' : 'bg-white/50 hover:bg-white/80'
+                className={`h-2 md:h-3 rounded-full transition-all ${
+                  index === currentSlide ? 'bg-indigo-500 w-6 md:w-8' : 'bg-white/50 hover:bg-white/80 w-2 md:w-3'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
           </div>
-          <button onClick={nextSlide} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-colors">
-            <ArrowRight className="w-5 h-5" />
+          <button onClick={nextSlide} className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-colors">
+            <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
           </button>
         </div>
       </div>
 
-      {/* Custom Website Quick Button (Premium Card) */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-40">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-neutral-100 flex flex-col md:flex-row items-center justify-between gap-8 bg-gradient-to-br from-white to-indigo-50/50">
-          <div className="flex-1 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-bold mb-4">
-              <Zap className="w-4 h-4" />
-              Premium Service
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">{t('custom.title')}</h2>
-            <p className="text-lg text-neutral-600 max-w-2xl">{t('custom.desc')}</p>
-          </div>
-          <div className="flex-shrink-0">
-            <Link 
-              to="/custom-project" 
-              className="inline-flex items-center justify-center gap-2 px-8 py-5 bg-neutral-900 text-white font-bold rounded-2xl hover:bg-indigo-600 transition-colors shadow-lg w-full md:w-auto text-lg"
-            >
-              <Code2 className="w-6 h-6" />
-              {t('custom.btn')}
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Website Categories (Grid Layout) */}
-      <div id="categories-section" className="mt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4 leading-tight">
-            আপনি কোন ধরনের ব্যবসার জন্য<br className="hidden sm:block" /> ওয়েবসাইট খুঁজছেন?
-          </h2>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            নিচের ক্যাটাগরি থেকে আপনার পছন্দের ওয়েবসাইট নির্বাচন করুন।
-          </p>
+      {/* Website Categories Section */}
+      <div id="categories-section" className="mt-8 md:mt-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Category Title & Divider */}
+        <div className="mb-8">
+          <h2 className="text-2xl md:text-3xl font-black text-neutral-900 mb-4 text-center md:text-left">সকল ক্যাটাগরি</h2>
+          <div className="h-px w-full bg-neutral-200"></div>
         </div>
 
-        <div className="mb-8 border-b border-neutral-200 pb-4">
-          <h3 className="text-2xl font-bold text-neutral-900">সকল ক্যাটাগরি</h3>
+        {/* Small Custom Website Section */}
+        <div className="bg-white rounded-2xl p-6 md:p-8 mb-8 border border-neutral-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+          <div>
+            <h3 className="text-xl md:text-2xl font-bold text-neutral-900 mb-2">কাস্টম ওয়েবসাইট</h3>
+            <p className="text-sm md:text-base text-neutral-600">আপনার ব্যবসার জন্য সম্পূর্ণ কাস্টম ওয়েবসাইট তৈরি করতে আমাদের সাথে যোগাযোগ করুন।</p>
+          </div>
+          <Link 
+            to="/custom-project" 
+            className="shrink-0 flex items-center justify-center gap-2 px-6 py-3 bg-neutral-900 text-white font-bold rounded-xl hover:bg-indigo-600 transition-colors shadow-sm text-sm w-full md:w-auto"
+          >
+            <Code2 className="w-4 h-4" />
+            কাস্টম ওয়েবসাইট অর্ডার করুন
+          </Link>
         </div>
         
+        {/* Category Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 pb-20">
           {DYNAMIC_CATEGORIES.map((category) => (
             <button
               key={category.id}
               onClick={() => navigate(`/templates?category=${encodeURIComponent(category.name)}`)}
-              className="flex flex-col items-center justify-center text-center p-6 bg-white rounded-2xl border border-neutral-100 hover:border-indigo-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+              className="flex flex-col items-center justify-center text-center p-4 sm:p-6 bg-white rounded-2xl border border-neutral-100 hover:border-indigo-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group shadow-sm"
             >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-neutral-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-4 group-hover:bg-indigo-50 group-hover:scale-110 transition-all duration-300 shadow-sm">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-neutral-50 rounded-xl sm:rounded-2xl flex items-center justify-center text-indigo-600 mb-3 sm:mb-4 group-hover:bg-indigo-50 group-hover:scale-110 transition-all duration-300">
                 {category.icon}
               </div>
-              <span className="font-bold text-neutral-900 text-sm sm:text-base group-hover:text-indigo-700 transition-colors">
+              <span className="font-bold text-neutral-900 text-xs sm:text-sm group-hover:text-indigo-700 transition-colors">
                 {category.name}
               </span>
             </button>

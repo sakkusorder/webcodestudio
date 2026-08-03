@@ -1,80 +1,60 @@
 import { useLanguage } from '../contexts/LanguageContext';
-import { ExternalLink, ShoppingCart, X } from 'lucide-react';
+import { ExternalLink, ShoppingCart, Code2, MessageCircle, Mail, HeadphonesIcon } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MOCK_TEMPLATES, CATEGORIES } from '../data/templates';
-import { useState, useMemo } from 'react';
+import { MOCK_TEMPLATES } from '../data/templates';
+import { useMemo } from 'react';
 
 export function Templates() {
   const { t } = useLanguage();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const categoryParam = searchParams.get('category');
   
-  const [activeCategory, setActiveCategory] = useState<string | null>(categoryParam);
+  const activeCategory = categoryParam;
 
   const filteredTemplates = useMemo(() => {
     if (!activeCategory) return MOCK_TEMPLATES;
     return MOCK_TEMPLATES.filter(template => template.category === activeCategory);
   }, [activeCategory]);
 
-  const clearCategory = () => {
-    setActiveCategory(null);
-    searchParams.delete('category');
-    setSearchParams(searchParams);
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div className="mb-12">
-        <h1 className="text-4xl font-bold text-neutral-900 mb-4">{t('templates.title')}</h1>
-        <p className="text-lg text-neutral-600 mb-6">{t('templates.subtitle')}</p>
-        
-        {/* Category Filter Pills */}
-        <div className="flex flex-wrap gap-2">
-          <button 
-            onClick={clearCategory}
-            className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${!activeCategory ? 'bg-indigo-600 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-          >
-            All Categories
-          </button>
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => {
-                setActiveCategory(cat);
-                setSearchParams({ category: cat });
-              }}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${activeCategory === cat ? 'bg-indigo-600 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        <h1 className="text-4xl font-bold text-neutral-900 mb-4">
+          {activeCategory ? activeCategory : t('templates.title')}
+        </h1>
+        <p className="text-lg text-neutral-600 mb-6">
+          {activeCategory 
+            ? `Explore our collection of ${activeCategory} templates` 
+            : t('templates.subtitle')}
+        </p>
       </div>
 
-      {activeCategory && (
-         <div className="mb-8 flex items-center justify-between bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
-           <div className="font-bold text-indigo-900">
-             Showing results for: <span className="text-indigo-600">{activeCategory}</span>
-           </div>
-           <button onClick={clearCategory} className="text-indigo-500 hover:text-indigo-700">
-             <X className="w-5 h-5" />
-           </button>
-         </div>
-      )}
-
       {filteredTemplates.length === 0 ? (
-        <div className="text-center py-20 bg-neutral-50 rounded-3xl border border-neutral-100">
-          <div className="text-neutral-400 mb-4 flex justify-center">
-             <ShoppingCart className="w-16 h-16 opacity-50" />
+        <div className="max-w-3xl mx-auto text-center py-16 px-6 bg-white rounded-3xl border border-neutral-100 shadow-sm mt-8">
+          <div className="w-24 h-24 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-8 transform rotate-3">
+             <Code2 className="w-12 h-12" />
           </div>
-          <h2 className="text-2xl font-bold text-neutral-900 mb-2">No websites found</h2>
-          <p className="text-neutral-500">We don't have any websites in this category yet.</p>
-          <button 
-            onClick={clearCategory}
-            className="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors"
-          >
-            View All Websites
-          </button>
+          <h2 className="text-2xl md:text-3xl font-black text-neutral-900 mb-4 leading-snug">
+            🚀 আমরা এখনও এই ধরনের ওয়েবসাইট তৈরি করার সুযোগ পাইনি।
+          </h2>
+          <p className="text-lg text-neutral-600 mb-10 leading-relaxed max-w-2xl mx-auto">
+            আপনি যদি এই ধরনের একটি ওয়েবসাইট তৈরি করতে চান, তাহলে আমাদের সাথে যোগাযোগ করুন। আমরা আপনার চাহিদা অনুযায়ী সম্পূর্ণ কাস্টম ওয়েবসাইট তৈরি করে দিতে প্রস্তুত।
+          </p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+            <a href="https://wa.me/1234567890" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 bg-[#25D366] text-white px-4 py-4 rounded-xl font-bold hover:bg-[#20bd5a] transition-all hover:-translate-y-1 shadow-sm">
+              <MessageCircle className="w-5 h-5" />
+              WhatsApp
+            </a>
+            <a href="mailto:support@webcodestudio.com" className="flex items-center justify-center gap-2 bg-neutral-900 text-white px-4 py-4 rounded-xl font-bold hover:bg-neutral-800 transition-all hover:-translate-y-1 shadow-sm">
+              <Mail className="w-5 h-5" />
+              Email
+            </a>
+            <button className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-all hover:-translate-y-1 shadow-sm">
+              <HeadphonesIcon className="w-5 h-5" />
+              Support
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
