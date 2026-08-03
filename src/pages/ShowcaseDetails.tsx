@@ -6,22 +6,13 @@ import {
   ArrowLeft, Share2, Heart, Monitor, Tablet, Smartphone, 
   ExternalLink, CheckCircle2, LayoutDashboard, ShieldCheck, 
   Search, Bell, FileText, Zap, CreditCard, PlayCircle, X,
-  Upload, Info
+  Upload, Info, CheckCircle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { MOCK_TEMPLATES } from '../data/templates';
 
-// Mock data matching the previous MOCK_TEMPLATES IDs
-const MOCK_TEMPLATE = {
-  id: '1',
-  title: 'E-Commerce Pro',
-  category: 'E-Commerce',
-  coverImage: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=1200&h=600',
-  description: 'A complete, high-conversion e-commerce platform designed for modern brands. Includes inventory management, advanced analytics, and multiple payment gateway integrations.',
-  technology: ['React', 'Node.js', 'PostgreSQL', 'Tailwind'],
-  deliveryTime: '14 - 21 Days',
-  startingPrice: 499,
-  minAdvancePercentage: 30,
-  lastUpdated: 'Aug 12, 2026',
+// Common rich data for templates to keep it simple in data file
+const RICH_DATA = {
   features: [
     { icon: <LayoutDashboard />, title: 'Admin Dashboard' },
     { icon: <Smartphone />, title: 'Mobile Friendly' },
@@ -61,7 +52,7 @@ const MOCK_TEMPLATE = {
   ]
 };
 
-export function TemplateDetails() {
+export function ShowcaseDetails() {
   const { id } = useParams();
   const { t } = useLanguage();
   const { isAuthenticated } = useAuth();
@@ -71,27 +62,29 @@ export function TemplateDetails() {
   const [deviceView, setDeviceView] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+
+  const template = MOCK_TEMPLATES.find(t => t.id === id) || MOCK_TEMPLATES[0];
 
   useEffect(() => {
-    // In a real app, fetch template details by ID here
     window.scrollTo(0, 0);
-  }, [id]);
+  }, []);
 
-  const minAdvanceAmount = (MOCK_TEMPLATE.startingPrice * MOCK_TEMPLATE.minAdvancePercentage) / 100;
+  const minAdvanceAmount = (template.startingPrice * template.minAdvancePercentage) / 100;
 
   // Order Form State
   const [paymentOption, setPaymentOption] = useState<'min' | 'full' | 'emi6' | 'emi12'>('min');
   const [customAmount, setCustomAmount] = useState<number>(minAdvanceAmount);
 
-  const currentPayment = paymentOption === 'min' ? minAdvanceAmount : paymentOption === 'full' ? MOCK_TEMPLATE.startingPrice : minAdvanceAmount;
-  const emi6Amount = Math.ceil((MOCK_TEMPLATE.startingPrice - minAdvanceAmount) / 6);
-  const emi12Amount = Math.ceil((MOCK_TEMPLATE.startingPrice - minAdvanceAmount) / 12);
+  const currentPayment = paymentOption === 'min' ? minAdvanceAmount : paymentOption === 'full' ? template.startingPrice : minAdvanceAmount;
+  const emi6Amount = Math.ceil((template.startingPrice - minAdvanceAmount) / 6);
+  const emi12Amount = Math.ceil((template.startingPrice - minAdvanceAmount) / 12);
 
   const handleOrderClick = () => {
     if (!isAuthenticated) {
       setShowAuthModal(true);
     } else {
-      navigate(`/checkout/template/${id}`);
+      navigate(`/checkout/showcase/${id}`);
     }
   };
 
@@ -116,13 +109,13 @@ export function TemplateDetails() {
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <span className="text-xs font-bold tracking-wider uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
-                  {MOCK_TEMPLATE.category}
+                  {template.category}
                 </span>
                 <span className="text-xs font-bold text-neutral-500 flex items-center gap-1">
-                  <PlayCircle className="w-3 h-3" /> Updated: {MOCK_TEMPLATE.lastUpdated}
+                  <PlayCircle className="w-3 h-3" /> Updated: {template.lastUpdated}
                 </span>
               </div>
-              <h1 className="text-2xl font-black text-neutral-900 tracking-tight">{MOCK_TEMPLATE.title}</h1>
+              <h1 className="text-2xl font-black text-neutral-900 tracking-tight">{template.title}</h1>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -148,7 +141,7 @@ export function TemplateDetails() {
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-8">
             
-            {/* Template Preview Display */}
+            {/* Gallery Viewport */}
             <div className="bg-neutral-900 rounded-3xl overflow-hidden shadow-2xl relative group">
               <div className="absolute top-4 left-0 w-full flex justify-center z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="bg-neutral-900/80 backdrop-blur-md p-1.5 rounded-2xl flex items-center gap-1 border border-neutral-700/50">
@@ -181,24 +174,44 @@ export function TemplateDetails() {
                   "w-[375px] rounded-[3rem] aspect-[9/19] border-8 border-neutral-800"
                 )}>
                   <img 
-                    src={MOCK_TEMPLATE.coverImage} 
+                    src={template.gallery[activeGalleryIndex]} 
                     alt="Template Preview" 
                     className="w-full h-full object-cover object-top"
                   />
                 </div>
               </div>
+
+              {/* Gallery Thumbnails */}
+              {template.gallery && template.gallery.length > 1 && (
+                <div className="absolute bottom-4 left-0 w-full flex justify-center z-10">
+                   <div className="bg-neutral-900/80 backdrop-blur-md p-2 rounded-2xl flex items-center gap-2 border border-neutral-700/50">
+                      {template.gallery.map((img, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setActiveGalleryIndex(idx)}
+                          className={cn(
+                            "w-12 h-12 rounded-lg overflow-hidden border-2 transition-all",
+                            activeGalleryIndex === idx ? "border-indigo-500 scale-110" : "border-transparent opacity-50 hover:opacity-100"
+                          )}
+                        >
+                          <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                   </div>
+                </div>
+              )}
             </div>
 
             {/* Overview Section */}
             <div className="bg-white rounded-3xl p-8 shadow-sm border border-neutral-200">
               <h2 className="text-2xl font-black text-neutral-900 mb-4">{t('details.overview')}</h2>
               <p className="text-neutral-600 text-lg leading-relaxed mb-8">
-                {MOCK_TEMPLATE.description}
+                {template.description}
               </p>
               
               <h3 className="text-lg font-bold text-neutral-900 mb-4">{t('details.tech')}</h3>
               <div className="flex flex-wrap gap-2">
-                {MOCK_TEMPLATE.technology.map((tech, i) => (
+                {template.technology.map((tech, i) => (
                   <span key={i} className="px-4 py-2 bg-neutral-100 text-neutral-800 rounded-xl font-bold text-sm">
                     {tech}
                   </span>
@@ -233,7 +246,7 @@ export function TemplateDetails() {
               <div className="p-8">
                 {activeTab === 'features' && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {MOCK_TEMPLATE.features.map((feature, i) => (
+                    {RICH_DATA.features.map((feature, i) => (
                       <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-neutral-100 bg-neutral-50/50 hover:bg-white hover:shadow-md transition-all">
                         <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
                           {feature.icon}
@@ -246,7 +259,7 @@ export function TemplateDetails() {
 
                 {activeTab === 'included' && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {MOCK_TEMPLATE.included.map((item, i) => (
+                    {RICH_DATA.included.map((item, i) => (
                       <div key={i} className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                         <span className="font-medium text-neutral-700">{item}</span>
@@ -257,7 +270,7 @@ export function TemplateDetails() {
 
                 {activeTab === 'faq' && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {MOCK_TEMPLATE.faq.map((item, i) => (
+                    {RICH_DATA.faq.map((item, i) => (
                       <div key={i}>
                         <h4 className="font-bold text-neutral-900 mb-2">{item.q}</h4>
                         <p className="text-neutral-600 text-sm leading-relaxed">{item.a}</p>
@@ -275,17 +288,17 @@ export function TemplateDetails() {
             {/* Action Card */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-neutral-200 sticky top-28">
               <div className="text-3xl font-black text-neutral-900 mb-6">
-                ${MOCK_TEMPLATE.startingPrice}
+                ${template.startingPrice}
               </div>
 
               <div className="space-y-4 mb-8">
                 <div className="flex items-center justify-between border-b border-neutral-100 pb-4">
                   <div className="text-sm font-semibold text-neutral-500 mb-1">{t('details.info.delivery')}</div>
-                  <div className="font-semibold text-neutral-900">{MOCK_TEMPLATE.deliveryTime}</div>
+                  <div className="font-semibold text-neutral-900">{template.deliveryTime}</div>
                 </div>
                 <div className="flex items-center justify-between border-b border-neutral-100 pb-4">
                   <div className="text-sm font-semibold text-neutral-500 mb-1">{t('details.info.advance')}</div>
-                  <div className="font-semibold text-neutral-900">{MOCK_TEMPLATE.minAdvancePercentage}% (Min. ${minAdvanceAmount})</div>
+                  <div className="font-semibold text-neutral-900">{template.minAdvancePercentage}% (Min. ${minAdvanceAmount})</div>
                 </div>
                 <div className="flex items-center justify-between pb-2">
                   <div className="text-sm font-semibold text-neutral-500 mb-1">{t('details.info.support')}</div>
@@ -300,10 +313,16 @@ export function TemplateDetails() {
                 >
                   {t('details.order')}
                 </button>
-                <button className="w-full bg-neutral-100 text-neutral-900 py-4 rounded-xl font-bold hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2">
+                <a 
+                  href="#"
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold transition-colors",
+                    template.status === 'Live' ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-neutral-100 text-neutral-900 hover:bg-neutral-200"
+                  )}
+                >
                   <ExternalLink className="w-5 h-5" />
-                  {t('details.live_demo')}
-                </button>
+                  {template.status === 'Live' ? 'Live Website' : 'Demo Website'}
+                </a>
               </div>
             </div>
 
@@ -377,11 +396,11 @@ export function TemplateDetails() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-neutral-700 mb-2">Selected Website</label>
-                      <input type="text" readOnly value={MOCK_TEMPLATE.title} className="w-full px-4 py-3 bg-neutral-100 border border-neutral-200 rounded-xl text-neutral-900 font-medium focus:outline-none" />
+                      <input type="text" readOnly value={template.title} className="w-full px-4 py-3 bg-neutral-100 border border-neutral-200 rounded-xl text-neutral-900 font-medium focus:outline-none" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-neutral-700 mb-2">Category</label>
-                      <input type="text" readOnly value={MOCK_TEMPLATE.category} className="w-full px-4 py-3 bg-neutral-100 border border-neutral-200 rounded-xl text-neutral-900 font-medium focus:outline-none" />
+                      <input type="text" readOnly value={template.category} className="w-full px-4 py-3 bg-neutral-100 border border-neutral-200 rounded-xl text-neutral-900 font-medium focus:outline-none" />
                     </div>
                   </div>
 
@@ -427,14 +446,14 @@ export function TemplateDetails() {
                           <span className="font-bold text-neutral-900">{t('order.payment.min')}</span>
                           <span className="font-bold text-indigo-600">${minAdvanceAmount}</span>
                         </div>
-                        <span className="text-sm text-neutral-500">{MOCK_TEMPLATE.minAdvancePercentage}% required to start</span>
+                        <span className="text-sm text-neutral-500">{template.minAdvancePercentage}% required to start</span>
                       </label>
                       
                       <label className={cn("block relative p-4 rounded-xl border-2 cursor-pointer transition-all", paymentOption === 'full' ? "border-indigo-600 bg-indigo-50" : "border-neutral-200 hover:border-neutral-300")}>
                         <input type="radio" name="payment" className="hidden" checked={paymentOption === 'full'} onChange={() => setPaymentOption('full')} />
                         <div className="flex justify-between items-center mb-1">
                           <span className="font-bold text-neutral-900">{t('order.payment.full')}</span>
-                          <span className="font-bold text-indigo-600">${MOCK_TEMPLATE.startingPrice}</span>
+                          <span className="font-bold text-indigo-600">${template.startingPrice}</span>
                         </div>
                         <span className="text-sm text-neutral-500">Pay everything upfront</span>
                       </label>
@@ -461,7 +480,7 @@ export function TemplateDetails() {
                     <div className="space-y-4 pt-6 border-t border-neutral-100">
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-neutral-500">{t('order.summary.price')}</span>
-                        <span className="font-medium text-neutral-900">${MOCK_TEMPLATE.startingPrice}</span>
+                        <span className="font-medium text-neutral-900">${template.startingPrice}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-neutral-900">{t('order.summary.paying')}</span>
@@ -470,7 +489,7 @@ export function TemplateDetails() {
                       {paymentOption === 'min' && (
                         <div className="flex justify-between items-center text-sm p-3 bg-amber-50 text-amber-800 rounded-lg">
                           <span className="font-medium">{t('order.summary.remaining')}</span>
-                          <span className="font-bold">${MOCK_TEMPLATE.startingPrice - currentPayment}</span>
+                          <span className="font-bold">${template.startingPrice - currentPayment}</span>
                         </div>
                       )}
                       

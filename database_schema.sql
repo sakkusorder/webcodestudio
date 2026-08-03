@@ -254,3 +254,32 @@ CREATE INDEX idx_payments_order ON payments(order_id);
 CREATE INDEX idx_invoices_order ON invoices(order_id);
 CREATE INDEX idx_messages_project ON messages(project_id);
 CREATE INDEX idx_custom_website_requests_user ON custom_website_requests(user_id);
+
+-- 18. EMI Schedules (Installments)
+CREATE TABLE emi_schedules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    order_id UUID REFERENCES orders(id),
+    user_id UUID REFERENCES users(id),
+    total_amount DECIMAL(10, 2) NOT NULL,
+    down_payment DECIMAL(10, 2) NOT NULL,
+    remaining_amount DECIMAL(10, 2) NOT NULL,
+    total_months INTEGER NOT NULL,
+    monthly_installment DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'active',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 19. EMI Payments (Monthly Installments)
+CREATE TABLE emi_payments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    emi_schedule_id UUID REFERENCES emi_schedules(id),
+    amount DECIMAL(10, 2) NOT NULL,
+    due_date DATE NOT NULL,
+    paid_date DATE,
+    status VARCHAR(50) DEFAULT 'pending',
+    payment_method VARCHAR(100),
+    transaction_id VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

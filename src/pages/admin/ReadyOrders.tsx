@@ -7,7 +7,7 @@ interface ReadyOrder {
   website: string;
   client: string;
   price: string;
-  paymentStatus: 'Paid' | 'Pending' | 'Failed';
+  paymentStatus: 'Paid' | 'Pending' | 'Failed' | 'Installment';
   deliveryDate: string;
 }
 
@@ -18,7 +18,16 @@ const INITIAL_ORDERS: ReadyOrder[] = [
 ];
 
 export function ReadyOrders() {
-  const [orders, setOrders] = useState<ReadyOrder[]>(INITIAL_ORDERS);
+  const localOrdersRaw = JSON.parse(localStorage.getItem('wcs_orders') || '[]');
+  const localOrders = localOrdersRaw.map((o: any) => ({
+    id: o.id,
+    website: o.product.name,
+    client: o.customer.fullName,
+    price: `$${o.product.price}`,
+    paymentStatus: o.payment.option === 'installment' ? 'Installment' : o.payment.paidNow > 0 ? 'Paid' : 'Pending',
+    deliveryDate: new Date(o.createdAt).toLocaleDateString()
+  }));
+  const [orders, setOrders] = useState<ReadyOrder[]>([...localOrders, ...INITIAL_ORDERS]);
   const [filter, setFilter] = useState('All');
 
   const filteredOrders = filter === 'All' ? orders : orders.filter(o => o.paymentStatus === filter);
@@ -69,6 +78,7 @@ export function ReadyOrders() {
                       "px-2.5 py-1 rounded-md text-xs font-bold",
                       order.paymentStatus === 'Paid' ? "bg-emerald-100 text-emerald-700" :
                       order.paymentStatus === 'Failed' ? "bg-rose-100 text-rose-700" :
+                      order.paymentStatus === 'Installment' ? "bg-indigo-100 text-indigo-700" :
                       "bg-amber-100 text-amber-700"
                     )}>
                       {order.paymentStatus}

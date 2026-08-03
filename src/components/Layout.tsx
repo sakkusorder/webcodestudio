@@ -48,6 +48,9 @@ export function Layout({ children }: { children: ReactNode }) {
             {/* Right: Actions */}
             <div className="hidden lg:flex items-center gap-6">
               <nav className="flex items-center gap-6">
+                <Link to="/showcase" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
+                  Showcase
+                </Link>
                 <Link to="/templates" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
                   {t('nav.templates')}
                 </Link>
@@ -119,6 +122,9 @@ export function Layout({ children }: { children: ReactNode }) {
         {mobileMenuOpen && (
           <div className="lg:hidden bg-white border-t border-neutral-100 py-4 px-4 shadow-lg absolute w-full">
             <nav className="flex flex-col gap-4 mb-6">
+              <Link to="/showcase" className="text-base font-semibold text-neutral-700 hover:text-indigo-600">
+                Showcase
+              </Link>
               <Link to="/templates" className="text-base font-semibold text-neutral-700 hover:text-indigo-600">
                 {t('nav.templates')}
               </Link>

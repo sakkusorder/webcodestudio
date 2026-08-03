@@ -11,9 +11,12 @@ import { Dashboard } from './pages/Dashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { Templates } from './pages/Templates';
 import { TemplateDetails } from './pages/TemplateDetails';
+import { Showcase } from './pages/Showcase';
+import { ShowcaseDetails } from './pages/ShowcaseDetails';
 import { CustomProject } from './pages/CustomProject';
 import { AdminVerification } from './pages/AdminVerification';
 import Todos from './pages/Todos';
+import Checkout from './pages/Checkout';
 
 const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode, requiredRole?: string }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -49,9 +52,12 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/templates/:id" element={<TemplateDetails />} />
+              <Route path="/showcase" element={<Showcase />} />
+              <Route path="/showcase/:id" element={<ShowcaseDetails />} />
               <Route path="/custom-project" element={<CustomProject />} />
               <Route path="/wcs-admin-verify" element={<AdminVerification />} />
               <Route path="/todos" element={<Todos />} />
+              <Route path="/checkout/:type/:id" element={<Checkout />} />
               
               {/* Protected Routes */}
               <Route 

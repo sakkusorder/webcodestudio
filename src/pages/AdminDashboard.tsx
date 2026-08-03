@@ -7,7 +7,7 @@ import {
   Users, MessageSquare, LifeBuoy, Star, Receipt, FileText, 
   FolderKanban, Bell, Image as ImageIcon, LayoutTemplate, 
   FolderOpen, FileEdit, HelpCircle, BarChart, Settings, 
-  User as UserIcon, LogOut, Search, Menu, X
+  User as UserIcon, LogOut, Search, Menu, X, Clock
 } from 'lucide-react';
 
 import { DashboardOverview } from './admin/DashboardOverview';
@@ -18,6 +18,9 @@ import { ReadyOrders } from './admin/ReadyOrders';
 import { Clients as UsersAdmin } from './admin/Clients';
 import { Support } from './admin/Support';
 import { Payments } from './admin/Payments';
+import { Installments } from './admin/Installments';
+import { Notifications } from './admin/Notifications';
+import { Reports } from './admin/Reports';
 import { Homepage } from './admin/Homepage';
 import { Settings as AdminSettings } from './admin/Settings';
 
@@ -31,7 +34,10 @@ const SIDEBAR_MENU = [
   { id: 'users', path: 'users', icon: Users, label: 'Users' },
   { id: 'support', path: 'support', icon: LifeBuoy, label: 'Support', badge: 5 },
   { id: 'payments', path: 'payments', icon: Receipt, label: 'Payments' },
+  { id: 'installments', path: 'installments', icon: Clock, label: 'Installments' },
+  { id: 'reports', path: 'reports', icon: BarChart, label: 'Reports' },
   { id: 'settings', path: 'settings', icon: Settings, label: 'Settings' },
+  { id: 'notifications', path: 'notifications', icon: Bell, label: 'Notifications', badge: 3 },
 ];
 
 export function AdminDashboard() {
@@ -148,10 +154,10 @@ export function AdminDashboard() {
               <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
             </div>
             
-            <button className="relative p-2 text-neutral-600 hover:bg-neutral-100 rounded-xl transition-colors">
+            <Link to="/admin/notifications" className="relative p-2 text-neutral-600 hover:bg-neutral-100 rounded-xl transition-colors">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 border-2 border-white rounded-full"></span>
-            </button>
+            </Link>
             
             <div className="flex items-center gap-3 pl-4 sm:pl-6 border-l border-neutral-200">
               <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold shrink-0">
@@ -177,6 +183,9 @@ export function AdminDashboard() {
             <Route path="/users" element={<UsersAdmin />} />
             <Route path="/support" element={<Support />} />
             <Route path="/payments" element={<Payments />} />
+            <Route path="/installments" element={<Installments />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/settings" element={<AdminSettings />} />
           </Routes>
         </div>

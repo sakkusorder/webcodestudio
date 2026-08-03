@@ -1,19 +1,39 @@
 import { useLanguage } from '../contexts/LanguageContext';
-import { ArrowRight, ShoppingCart, Code2, Presentation, Settings, Zap, ArrowLeft, Briefcase, Store, Laptop, Activity } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { 
+  ArrowRight, Code2, Settings, Zap, ArrowLeft, Laptop, 
+  ShoppingCart, Store, Newspaper, Building2, Building, Stethoscope,
+  Pill, Activity, GraduationCap, Truck, Plane, Car, Briefcase,
+  User, CalendarCheck, Dumbbell, Scissors, FileText, X
+} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
-const MOCK_CATEGORIES = [
-  { id: 1, name: 'E-commerce', icon: <ShoppingCart />, image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&q=80' },
-  { id: 2, name: 'Corporate', icon: <Briefcase />, image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80' },
-  { id: 3, name: 'Portfolio', icon: <Presentation />, image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=80' },
-  { id: 4, name: 'Restaurant', icon: <Store />, image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80' },
-  { id: 5, name: 'Blog', icon: <Laptop />, image: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=400&q=80' },
-  { id: 6, name: 'Healthcare', icon: <Activity />, image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=400&q=80' },
+const DYNAMIC_CATEGORIES = [
+  { id: 'dropshipping', name: 'ড্রপশিপিং ওয়েবসাইট', icon: <ShoppingCart />, image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&q=80' },
+  { id: 'ecommerce', name: 'ই-কমার্স ওয়েবসাইট', icon: <Store />, image: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=400&q=80' },
+  { id: 'news', name: 'নিউজ পোর্টাল', icon: <Newspaper />, image: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=400&q=80' },
+  { id: 'restaurant', name: 'রেস্টুরেন্ট ওয়েবসাইট', icon: <Store />, image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80' },
+  { id: 'hotel', name: 'হোটেল ও রিসোর্ট ওয়েবসাইট', icon: <Building2 />, image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&q=80' },
+  { id: 'hospital', name: 'হাসপাতাল ওয়েবসাইট', icon: <Building />, image: 'https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=400&q=80' },
+  { id: 'clinic', name: 'ক্লিনিক ওয়েবসাইট', icon: <Stethoscope />, image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&q=80' },
+  { id: 'pharmacy', name: 'ফার্মেসি ওয়েবসাইট', icon: <Pill />, image: 'https://images.unsplash.com/photo-1584308666744-24d5e4a42b10?w=400&q=80' },
+  { id: 'diagnostic', name: 'ডায়াগনস্টিক সেন্টার ওয়েবসাইট', icon: <Activity />, image: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=400&q=80' },
+  { id: 'education', name: 'শিক্ষা প্রতিষ্ঠান ওয়েবসাইট', icon: <GraduationCap />, image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&q=80' },
+  { id: 'food', name: 'ফুড ডেলিভারি ওয়েবসাইট', icon: <Truck />, image: 'https://images.unsplash.com/photo-1526367790999-0150786686a2?w=400&q=80' },
+  { id: 'travel', name: 'ট্রাভেল ও ট্যুরিজম ওয়েবসাইট', icon: <Plane />, image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&q=80' },
+  { id: 'car', name: 'গাড়ি ভাড়া ওয়েবসাইট', icon: <Car />, image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=400&q=80' },
+  { id: 'business', name: 'ব্যবসায়িক ওয়েবসাইট', icon: <Briefcase />, image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80' },
+  { id: 'portfolio', name: 'ব্যক্তিগত পোর্টফোলিও', icon: <User />, image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=80' },
+  { id: 'booking', name: 'অনলাইন বুকিং ও অ্যাপয়েন্টমেন্ট', icon: <CalendarCheck />, image: 'https://images.unsplash.com/photo-1506784951206-3971c890787e?w=400&q=80' },
+  { id: 'gym', name: 'জিম ও ফিটনেস', icon: <Dumbbell />, image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80' },
+  { id: 'beauty', name: 'বিউটি পার্লার ও স্যালন', icon: <Scissors />, image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&q=80' },
+  { id: 'blog', name: 'ব্লগ ও ম্যাগাজিন', icon: <FileText />, image: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=400&q=80' },
+  { id: 'custom', name: 'কাস্টম ওয়েব অ্যাপ্লিকেশন', icon: <Code2 />, image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&q=80' },
 ];
 
 export function Home() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides = [
@@ -64,6 +84,10 @@ export function Home() {
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
 
+  const scrollToCategories = () => {
+    document.getElementById('categories-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div className="w-full bg-neutral-50 pb-20">
       {/* Hero Slider */}
@@ -90,13 +114,13 @@ export function Home() {
               <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-8 max-w-4xl drop-shadow-xl leading-tight">
                 {t(slide.titleKey)}
               </h1>
-              <Link 
-                to="/templates" 
+              <button 
+                onClick={scrollToCategories}
                 className="flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-500 transition-all shadow-[0_0_40px_rgba(79,70,229,0.4)] hover:shadow-[0_0_60px_rgba(79,70,229,0.6)] transform hover:-translate-y-1"
               >
-                {t(slide.btnKey)}
+                সকল ক্যাটাগরি দেখুন
                 <ArrowRight className="w-5 h-5" />
-              </Link>
+              </button>
             </div>
           </div>
         ))}
@@ -147,44 +171,35 @@ export function Home() {
         </div>
       </div>
 
-      {/* Website Categories (Horizontal Scroll) */}
-      <div className="mt-32 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-3xl font-bold text-neutral-900">{t('categories.title')}</h2>
-          <div className="flex gap-2 hidden sm:flex">
-            <button className="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <button className="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors">
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          </div>
+      {/* Website Categories (Grid Layout) */}
+      <div id="categories-section" className="mt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4 leading-tight">
+            আপনি কোন ধরনের ব্যবসার জন্য<br className="hidden sm:block" /> ওয়েবসাইট খুঁজছেন?
+          </h2>
+          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
+            নিচের ক্যাটাগরি থেকে আপনার পছন্দের ওয়েবসাইট নির্বাচন করুন।
+          </p>
+        </div>
+
+        <div className="mb-8 border-b border-neutral-200 pb-4">
+          <h3 className="text-2xl font-bold text-neutral-900">সকল ক্যাটাগরি</h3>
         </div>
         
-        <div className="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {MOCK_CATEGORIES.map((category) => (
-            <div 
-              key={category.id} 
-              className="snap-start flex-shrink-0 w-[280px] group cursor-pointer"
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 pb-20">
+          {DYNAMIC_CATEGORIES.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => navigate(`/templates?category=${encodeURIComponent(category.name)}`)}
+              className="flex flex-col items-center justify-center text-center p-6 bg-white rounded-2xl border border-neutral-100 hover:border-indigo-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
             >
-              <div className="relative h-[360px] rounded-3xl overflow-hidden mb-4 shadow-md group-hover:shadow-xl transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10 transition-opacity group-hover:opacity-90"></div>
-                <img 
-                  src={category.image} 
-                  alt={category.name} 
-                  className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
-                />
-                <div className="absolute bottom-0 left-0 right-0 p-6 z-20 flex flex-col items-center text-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                  <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white mb-4 border border-white/30 shadow-lg">
-                    {category.icon}
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">{category.name}</h3>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-1 text-indigo-300 font-medium text-sm mt-2">
-                    Explore Templates <ArrowRight className="w-4 h-4" />
-                  </div>
-                </div>
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-neutral-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-4 group-hover:bg-indigo-50 group-hover:scale-110 transition-all duration-300 shadow-sm">
+                {category.icon}
               </div>
-            </div>
+              <span className="font-bold text-neutral-900 text-sm sm:text-base group-hover:text-indigo-700 transition-colors">
+                {category.name}
+              </span>
+            </button>
           ))}
         </div>
       </div>
