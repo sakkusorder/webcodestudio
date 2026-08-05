@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, MoreVertical, Edit, Trash2, Eye, CheckCircle, XCircle, Paperclip, MessageSquare } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -23,7 +23,27 @@ export function CustomOrders() {
     ...o,
     status: o.status as CustomOrder['status']
   }));
+  
   const [orders, setOrders] = useState<CustomOrder[]>([...localOrders, ...INITIAL_ORDERS]);
+
+  useEffect(() => {
+    const fetchOrders = () => {
+      const storedRaw = JSON.parse(localStorage.getItem('wcs_custom_orders') || '[]');
+      const storedOrders = storedRaw.map((o: any) => ({
+        ...o,
+        status: o.status as CustomOrder['status']
+      }));
+      setOrders([...storedOrders, ...INITIAL_ORDERS]);
+    };
+    
+    window.addEventListener('storage', fetchOrders);
+    const interval = setInterval(fetchOrders, 1000);
+    return () => {
+      window.removeEventListener('storage', fetchOrders);
+      clearInterval(interval);
+    };
+  }, []);
+
   const [filter, setFilter] = useState('All');
   const [viewOrder, setViewOrder] = useState<CustomOrder | null>(null);
 

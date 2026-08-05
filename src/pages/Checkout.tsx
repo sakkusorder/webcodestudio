@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { MOCK_TEMPLATES } from '../data/templates';
+import { getStoredTemplates } from '../data/templates';
 import { CreditCard, Wallet, FileText, CheckCircle, ArrowLeft, Smartphone } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { v4 as uuidv4 } from 'uuid';
@@ -36,8 +36,8 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState<'bkash' | 'nagad' | 'sslcommerz' | 'card'>('sslcommerz');
 
   useEffect(() => {
-    // Both showcase and templates use MOCK_TEMPLATES in this mock app
-    const found = MOCK_TEMPLATES.find(t => t.id === id);
+    // Both showcase and templates use getStoredTemplates() in this mock app
+    const found = getStoredTemplates().find(t => t.id === id);
     if (found) {
       setProduct(found);
     } else {

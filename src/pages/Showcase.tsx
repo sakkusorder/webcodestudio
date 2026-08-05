@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ExternalLink, ShoppingCart, Search, LayoutGrid, List, Filter, Star, CheckCircle2, PlayCircle, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
-import { MOCK_TEMPLATES, CATEGORIES, TECHNOLOGIES } from '../data/templates';
+import { getStoredTemplates, CATEGORIES, TECHNOLOGIES } from '../data/templates';
 
 export function Showcase() {
   const { t } = useLanguage();
@@ -14,7 +14,7 @@ export function Showcase() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const filteredTemplates = useMemo(() => {
-    return MOCK_TEMPLATES.filter(template => {
+    return getStoredTemplates().filter(template => {
       const matchesSearch = template.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             template.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'All' || template.category === selectedCategory;

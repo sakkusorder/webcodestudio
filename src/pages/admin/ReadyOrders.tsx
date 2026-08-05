@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, MoreVertical, Edit, Trash2, Eye, Download, CheckCircle, FileText } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -23,7 +23,31 @@ export function ReadyOrders() {
     paymentStatus: o.payment.option === 'installment' ? 'Installment' : o.payment.paidNow > 0 ? 'Paid' : 'Pending',
     deliveryDate: new Date(o.createdAt).toLocaleDateString()
   }));
+  
   const [orders, setOrders] = useState<ReadyOrder[]>([...localOrders, ...INITIAL_ORDERS]);
+
+  useEffect(() => {
+    const fetchOrders = () => {
+      const storedRaw = JSON.parse(localStorage.getItem('wcs_orders') || '[]');
+      const storedOrders = storedRaw.map((o: any) => ({
+        id: o.id,
+        website: o.product.name,
+        client: o.customer.fullName,
+        price: `${o.product.price}`,
+        paymentStatus: o.payment.option === 'installment' ? 'Installment' : o.payment.paidNow > 0 ? 'Paid' : 'Pending',
+        deliveryDate: new Date(o.createdAt).toLocaleDateString()
+      }));
+      setOrders([...storedOrders, ...INITIAL_ORDERS]);
+    };
+    
+    window.addEventListener('storage', fetchOrders);
+    const interval = setInterval(fetchOrders, 1000);
+    return () => {
+      window.removeEventListener('storage', fetchOrders);
+      clearInterval(interval);
+    };
+  }, []);
+
   const [filter, setFilter] = useState('All');
 
   const filteredOrders = filter === 'All' ? orders : orders.filter(o => o.paymentStatus === filter);

@@ -56,4 +56,12 @@ export const TECHNOLOGIES = [
   'PostgreSQL', 'MySQL', 'MongoDB', 'Firebase', 'Tailwind', 'Bootstrap'
 ];
 
-export const MOCK_TEMPLATES: Template[] = [];
+
+export const getStoredTemplates = (): Template[] => {
+  if (typeof window !== 'undefined') {
+    return JSON.parse(localStorage.getItem('wcs_templates') || '[]');
+  }
+  return [];
+};
+export const MOCK_TEMPLATES: Template[] = getStoredTemplates();
+

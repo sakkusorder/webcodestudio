@@ -1,3 +1,4 @@
+import { getStoredTemplates } from '../data/templates';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
   ArrowRight, Code2, Settings, Zap, ArrowLeft, Laptop, 
@@ -34,7 +35,20 @@ const DYNAMIC_CATEGORIES = [
 export function Home() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [templates, setTemplates] = useState(getStoredTemplates());
+  
+  useEffect(() => {
+    const handleStorage = () => setTemplates(getStoredTemplates());
+    window.addEventListener('storage', handleStorage);
+    const interval = setInterval(handleStorage, 1000);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
+
 
   const slides = [
     {

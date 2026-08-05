@@ -4,7 +4,19 @@ import { cn } from '../../lib/utils';
 import { MOCK_TEMPLATES, CATEGORIES, TECHNOLOGIES, Template } from '../../data/templates';
 
 export function Websites() {
-  const [websites, setWebsites] = useState<Template[]>(MOCK_TEMPLATES);
+  
+  const [websites, setWebsitesState] = useState<Template[]>(() => {
+    return JSON.parse(localStorage.getItem('wcs_templates') || '[]');
+  });
+
+  const setWebsites = (newWebsites: Template[] | ((prev: Template[]) => Template[])) => {
+    setWebsitesState((prev) => {
+      const updated = typeof newWebsites === 'function' ? newWebsites(prev) : newWebsites;
+      localStorage.setItem('wcs_templates', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 

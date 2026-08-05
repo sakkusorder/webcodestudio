@@ -9,7 +9,7 @@ import {
   Upload, Info, CheckCircle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { MOCK_TEMPLATES } from '../data/templates';
+import { getStoredTemplates } from '../data/templates';
 
 // Common rich data for templates to keep it simple in data file
 const RICH_DATA = {
@@ -64,7 +64,7 @@ export function ShowcaseDetails() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
 
-  const template = MOCK_TEMPLATES.find(t => t.id === id) || MOCK_TEMPLATES[0];
+  const template = getStoredTemplates().find(t => t.id === id) || getStoredTemplates()[0];
 
   useEffect(() => {
     window.scrollTo(0, 0);

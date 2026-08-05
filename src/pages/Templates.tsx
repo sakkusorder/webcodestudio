@@ -1,8 +1,8 @@
 import { useLanguage } from '../contexts/LanguageContext';
 import { ExternalLink, ShoppingCart, Code2, MessageCircle, Mail, HeadphonesIcon } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MOCK_TEMPLATES } from '../data/templates';
-import { useMemo } from 'react';
+import { getStoredTemplates } from '../data/templates';
+import { useMemo, useEffect, useState } from 'react';
 
 export function Templates() {
   const { t } = useLanguage();
@@ -11,10 +11,25 @@ export function Templates() {
   
   const activeCategory = categoryParam;
 
+  
+  const [templates, setTemplates] = useState(getStoredTemplates());
+  
+  useEffect(() => {
+    const handleStorage = () => setTemplates(getStoredTemplates());
+    window.addEventListener('storage', handleStorage);
+    // Also poll just in case it's same window
+    const interval = setInterval(handleStorage, 1000);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
+
   const filteredTemplates = useMemo(() => {
-    if (!activeCategory) return MOCK_TEMPLATES;
-    return MOCK_TEMPLATES.filter(template => template.category === activeCategory);
-  }, [activeCategory]);
+    if (!activeCategory) return templates;
+    return templates.filter(template => template.category === activeCategory);
+  }, [activeCategory, templates]);
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
