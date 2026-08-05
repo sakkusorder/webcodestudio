@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../utils/supabase';
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -26,9 +26,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setIsLoading(false);
+    }).catch(() => {
       setIsLoading(false);
     });
 
@@ -46,7 +48,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const checkConfig = () => {
+    if (!isSupabaseConfigured) {
+      return { data: null, error: { message: 'Supabase configuration is missing. If you are on Vercel, please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your Environment Variables.', status: 400, name: 'ConfigError' } as any };
+    }
+    return null;
+  };
+
   const signUp = async (email: string, password?: string, fullName?: string) => {
+    const configError = checkConfig();
+    if (configError) return configError;
     if (password) {
       return supabase.auth.signUp({
         email,
@@ -71,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithPassword = async (email: string, password: string) => {
+    const configError = checkConfig();
+    if (configError) return configError;
     return supabase.auth.signInWithPassword({
       email,
       password,
@@ -78,12 +91,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithOtp = async (email: string) => {
+    const configError = checkConfig();
+    if (configError) return configError;
     return supabase.auth.signInWithOtp({
       email,
     });
   };
 
   const verifyOtp = async (email: string, token: string, type: 'signup' | 'magiclink' | 'recovery' | 'email_change') => {
+    const configError = checkConfig();
+    if (configError) return configError;
     return supabase.auth.verifyOtp({
       email,
       token,
@@ -92,18 +109,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const sendPasswordReset = async (email: string) => {
+    const configError = checkConfig();
+    if (configError) return configError;
     return supabase.auth.resetPasswordForEmail(email);
   };
 
   const updatePassword = async (password: string) => {
+    const configError = checkConfig();
+    if (configError) return configError;
     return supabase.auth.updateUser({ password });
   };
 
   const updateEmail = async (email: string) => {
+    const configError = checkConfig();
+    if (configError) return configError;
     return supabase.auth.updateUser({ email });
   };
 
   const signOut = async () => {
+    const configError = checkConfig();
+    if (configError) return configError;
     return supabase.auth.signOut();
   };
 
