@@ -2,17 +2,18 @@ import { ReactNode, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { Globe, Menu, Search, UserPlus, LogIn, X, LogOut, LayoutDashboard } from 'lucide-react';
+import { Globe, Menu, Search, UserPlus, LogIn, X, LogOut, LayoutDashboard, Package, History, Bell, HelpCircle, ChevronRight } from 'lucide-react';
 
 export function Layout({ children }: { children: ReactNode }) {
   const { language, setLanguage, t } = useLanguage();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate('/');
   };
 
@@ -22,7 +23,15 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Left: Logo */}
-            <div className="flex-shrink-0 flex items-center">
+            <div className="flex-shrink-0 flex items-center gap-4">
+              {isAuthenticated && (
+                <button 
+                  onClick={() => setSidebarOpen(true)}
+                  className="p-2 -ml-2 text-neutral-700 hover:bg-neutral-100 rounded-xl transition-colors"
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+              )}
               <Link to="/" className="text-2xl font-black tracking-tighter text-indigo-700 flex items-center gap-2">
                 <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
                   <span className="text-lg">W</span>
@@ -47,22 +56,24 @@ export function Layout({ children }: { children: ReactNode }) {
 
             {/* Right: Actions */}
             <div className="hidden lg:flex items-center gap-6">
-              <nav className="flex items-center gap-6">
-                <Link to="/showcase" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
-                  Showcase
-                </Link>
-                <Link to="/templates" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
-                  {t('nav.templates')}
-                </Link>
-                <Link to="/dashboard" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
-                  {t('nav.dashboard')}
-                </Link>
-                <Link to="/todos" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
-                  Todos
-                </Link>
-              </nav>
+              {!isAuthenticated && (
+                <nav className="flex items-center gap-6">
+                  <Link to="/showcase" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
+                    Showcase
+                  </Link>
+                  <Link to="/templates" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
+                    {t('nav.templates')}
+                  </Link>
+                  <Link to="/dashboard" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
+                    {t('nav.dashboard')}
+                  </Link>
+                  <Link to="/todos" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
+                    Todos
+                  </Link>
+                </nav>
+              )}
 
-              <div className="h-6 w-px bg-neutral-200"></div>
+              {!isAuthenticated && <div className="h-6 w-px bg-neutral-200"></div>}
 
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors cursor-pointer">
@@ -79,14 +90,12 @@ export function Layout({ children }: { children: ReactNode }) {
                 
                 {isAuthenticated ? (
                   <div className="flex items-center gap-4">
-                    <Link to={user?.role === 'admin' || user?.role === 'manager' ? '/admin' : '/dashboard'} className="flex items-center gap-2 text-sm font-semibold text-neutral-700 hover:text-indigo-600 transition-colors">
-                      <LayoutDashboard className="w-4 h-4" />
-                      Dashboard
-                    </Link>
-                    <button onClick={handleLogout} className="flex items-center gap-2 text-sm font-semibold text-neutral-500 hover:text-rose-600 transition-colors">
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </button>
+                    <div 
+                      className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-black text-lg cursor-pointer hover:bg-indigo-200 transition-colors"
+                      onClick={() => setSidebarOpen(true)}
+                    >
+                      {user?.name?.charAt(0) || 'U'}
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -103,7 +112,7 @@ export function Layout({ children }: { children: ReactNode }) {
               </div>
             </div>
 
-            {/* Mobile menu button */}
+            {!isAuthenticated && (
             <div className="lg:hidden flex items-center gap-4">
                <button className="text-neutral-500 hover:text-neutral-900">
                   <Search className="w-6 h-6" />
@@ -115,11 +124,12 @@ export function Layout({ children }: { children: ReactNode }) {
                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
+            )}
           </div>
         </div>
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && (
+        {!isAuthenticated && mobileMenuOpen && (
           <div className="lg:hidden bg-white border-t border-neutral-100 py-4 px-4 shadow-lg absolute w-full">
             <nav className="flex flex-col gap-4 mb-6">
               <Link to="/showcase" className="text-base font-semibold text-neutral-700 hover:text-indigo-600">
@@ -172,6 +182,81 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
         )}
       </header>
+
+      {/* Global Sidebar for Authenticated Users */}
+      {isAuthenticated && (
+        <>
+          {/* Overlay */}
+          <div 
+            className={`fixed inset-0 bg-neutral-900/50 backdrop-blur-sm z-[60] transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            onClick={() => setSidebarOpen(false)}
+          />
+          
+          {/* Sidebar Panel */}
+          <div className={`fixed top-0 left-0 bottom-0 w-[280px] bg-white z-[70] shadow-2xl transition-transform duration-300 flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center font-black text-lg">
+                  {user?.name?.charAt(0) || 'U'}
+                </div>
+                <div>
+                  <div className="font-bold text-neutral-900 text-sm">{user?.name || 'Customer'}</div>
+                  <div className="text-xs font-semibold text-neutral-500">Premium Member</div>
+                </div>
+              </div>
+              <button onClick={() => setSidebarOpen(false)} className="p-2 text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+              <Link to="/templates" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-3.5 text-neutral-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl font-semibold transition-colors">
+                <Globe className="w-5 h-5" />
+                ওয়েবসাইট দেখুন
+              </Link>
+              <Link to="/dashboard?tab=orders" onClick={() => setSidebarOpen(false)} className="flex items-center justify-between px-4 py-3.5 text-neutral-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl font-semibold transition-colors group">
+                <div className="flex items-center gap-3">
+                  <Package className="w-5 h-5" />
+                  আমার অর্ডার
+                </div>
+                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
+              <Link to="/dashboard?tab=history" onClick={() => setSidebarOpen(false)} className="flex items-center justify-between px-4 py-3.5 text-neutral-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl font-semibold transition-colors group">
+                <div className="flex items-center gap-3">
+                  <History className="w-5 h-5" />
+                  পেমেন্ট হিস্টরি
+                </div>
+                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
+              <Link to="/dashboard?tab=notifications" onClick={() => setSidebarOpen(false)} className="flex items-center justify-between px-4 py-3.5 text-neutral-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl font-semibold transition-colors group">
+                <div className="flex items-center gap-3">
+                  <Bell className="w-5 h-5" />
+                  নোটিফিকেশন
+                </div>
+                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
+              <Link to="/dashboard?tab=support" onClick={() => setSidebarOpen(false)} className="flex items-center justify-between px-4 py-3.5 text-neutral-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl font-semibold transition-colors group">
+                <div className="flex items-center gap-3">
+                  <HelpCircle className="w-5 h-5" />
+                  সাপোর্ট
+                </div>
+                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
+            </nav>
+
+            <div className="p-4 border-t border-neutral-100">
+              <button 
+                onClick={() => { handleLogout(); setSidebarOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-rose-600 hover:bg-rose-50 font-semibold rounded-xl transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                লগআউট
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
 
       <main className="flex-grow">{children}</main>
 

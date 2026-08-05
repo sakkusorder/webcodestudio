@@ -331,17 +331,17 @@ export default function Checkout() {
               <div className="space-y-4 text-sm mb-6 pb-6 border-b border-neutral-100">
                 <div className="flex justify-between">
                   <span className="text-neutral-600">Website Price</span>
-                  <span className="font-semibold text-neutral-900">${websitePrice.toLocaleString()}</span>
+                  <span className="font-semibold text-neutral-900">৳${websitePrice.toLocaleString()}</span>
                 </div>
                 {paymentOption === 'installment' && (
                   <>
                     <div className="flex justify-between text-indigo-600 font-medium">
                       <span>Down Payment ({downPaymentPercentage}%)</span>
-                      <span>${downPaymentAmount.toLocaleString()}</span>
+                      <span>৳${downPaymentAmount.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-neutral-600">Remaining Amount</span>
-                      <span className="font-semibold text-neutral-900">${remainingAmount.toLocaleString()}</span>
+                      <span className="font-semibold text-neutral-900">৳${remainingAmount.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-neutral-600">Installment Duration</span>
@@ -349,7 +349,7 @@ export default function Checkout() {
                     </div>
                     <div className="flex justify-between text-orange-600 font-medium">
                       <span>Monthly EMI</span>
-                      <span>${monthlyInstallment.toLocaleString()}/mo</span>
+                      <span>৳${monthlyInstallment.toLocaleString()}/mo</span>
                     </div>
                   </>
                 )}
@@ -357,7 +357,7 @@ export default function Checkout() {
 
               <div className="flex justify-between items-center mb-8">
                 <span className="text-base font-bold text-neutral-900">Total Payable Now</span>
-                <span className="text-2xl font-black text-indigo-600">${payingNow.toLocaleString()}</span>
+                <span className="text-2xl font-black text-indigo-600">৳${payingNow.toLocaleString()}</span>
               </div>
 
               <button 

@@ -1,4 +1,10 @@
-import { useState, useEffect } from 'react';
+const fs = require('fs');
+let code = fs.readFileSync('src/pages/TemplateDetails.tsx', 'utf-8');
+
+// The prompt requested deleting Extra Features, changing delivery, and order submit flows.
+// I will just use sed or rewrite the file with the modified text since `TemplateDetails.tsx` was just written by me.
+
+const newCode = `import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,8 +30,7 @@ const MOCK_TEMPLATE = {
   description: 'A complete, high-conversion e-commerce platform designed for modern brands. Includes inventory management, advanced analytics, and multiple payment gateway integrations. This professional website is built to boost your sales and provide an excellent shopping experience for your customers.',
   technology: ['React', 'Node.js', 'PostgreSQL', 'Tailwind', 'Stripe'],
   deliveryTime: '14 - 21 Days',
-  startingPrice: 3500,
-  downPayment: 1000,
+  startingPrice: 499,
   minAdvancePercentage: 30,
   lastUpdated: 'Aug 12, 2026',
   demoUrl: 'https://demo.example.com',
@@ -84,26 +89,12 @@ export function TemplateDetails() {
     email: user?.email || '',
     businessName: '',
     deliveryTime: '১৫ দিন',
-    customDeliveryTime: '',
     paymentOption: 'Full Payment',
     installmentMonths: '৬ মাস',
     projectDetails: '',
     paymentMethod: 'bkash',
-    transactionId: '',
-    sentAmount: ''
+    transactionId: ''
   });
-
-  const calculateTotal = () => {
-    let total = MOCK_TEMPLATE.startingPrice;
-    if (formData.paymentOption === 'Installment') {
-      total += total * 0.10;
-    }
-    return total;
-  };
-
-  const finalPrice = calculateTotal();
-  const requiredDownPayment = formData.paymentOption === 'Installment' ? MOCK_TEMPLATE.downPayment : finalPrice;
-  const remainingAmount = finalPrice - requiredDownPayment;
 
   const handleOrderClick = () => {
     if (!isAuthenticated) {
@@ -126,9 +117,9 @@ export function TemplateDetails() {
     let shareUrl = '';
     
     switch (platform) {
-      case 'whatsapp': shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(url)}`; break;
-      case 'facebook': shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`; break;
-      case 'telegram': shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}`; break;
+      case 'whatsapp': shareUrl = \`https://api.whatsapp.com/send?text=\${encodeURIComponent(url)}\`; break;
+      case 'facebook': shareUrl = \`https://www.facebook.com/sharer/sharer.php?u=\${encodeURIComponent(url)}\`; break;
+      case 'telegram': shareUrl = \`https://t.me/share/url?url=\${encodeURIComponent(url)}\`; break;
       case 'copy': 
         navigator.clipboard.writeText(url);
         alert('Link copied to clipboard!');
@@ -148,7 +139,6 @@ export function TemplateDetails() {
 
   const submitPayment = (e: any) => {
     e.preventDefault();
-    alert('Payment Submitted Successfully! Order Status: Down Payment Pending Verification');
     navigate('/dashboard');
   };
 
@@ -185,11 +175,11 @@ export function TemplateDetails() {
         <div className="mt-16 bg-neutral-900 relative aspect-[4/3] w-full overflow-hidden">
           <div 
             className="flex transition-transform duration-500 ease-out h-full"
-            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            style={{ transform: \`translateX(-\${currentSlide * 100}%)\` }}
           >
             {MOCK_TEMPLATE.screenshots.map((img, i) => (
               <div key={i} className="min-w-full h-full relative">
-                <img src={img} alt={`Screenshot ${i+1}`} className="w-full h-full object-cover object-top" />
+                <img src={img} alt={\`Screenshot \${i+1}\`} className="w-full h-full object-cover object-top" />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
               </div>
             ))}
@@ -242,7 +232,7 @@ export function TemplateDetails() {
                   <DollarSign className="w-4 h-4" />
                   <span className="text-xs font-semibold">Price</span>
                 </div>
-                <div className="text-lg font-black text-indigo-600">৳{MOCK_TEMPLATE.startingPrice}</div>
+                <div className="text-lg font-black text-indigo-600">\${MOCK_TEMPLATE.startingPrice}</div>
               </div>
               <div className="bg-neutral-50 p-3 rounded-2xl">
                 <div className="flex items-center gap-1.5 text-neutral-500 mb-1">
@@ -484,7 +474,7 @@ export function TemplateDetails() {
               {/* Action Card */}
               <div className="bg-white rounded-3xl p-6 shadow-sm border border-neutral-200 sticky top-28">
                 <div className="text-3xl font-black text-neutral-900 mb-6">
-                  ৳{MOCK_TEMPLATE.startingPrice}
+                  \${MOCK_TEMPLATE.startingPrice}
                 </div>
                 <div className="space-y-4 mb-8">
                   <div className="flex items-center justify-between border-b border-neutral-100 pb-4">
@@ -493,7 +483,7 @@ export function TemplateDetails() {
                   </div>
                   <div className="flex items-center justify-between border-b border-neutral-100 pb-4">
                     <div className="text-sm font-semibold text-neutral-500 mb-1">{t('details.info.advance')}</div>
-                    <div className="font-semibold text-neutral-900">{MOCK_TEMPLATE.minAdvancePercentage}% (Min. ৳{Math.round(MOCK_TEMPLATE.startingPrice * (MOCK_TEMPLATE.minAdvancePercentage / 100))})</div>
+                    <div className="font-semibold text-neutral-900">{MOCK_TEMPLATE.minAdvancePercentage}% (Min. \${Math.round(MOCK_TEMPLATE.startingPrice * (MOCK_TEMPLATE.minAdvancePercentage / 100))})</div>
                   </div>
                   <div className="flex items-center justify-between pb-2">
                     <div className="text-sm font-semibold text-neutral-500 mb-1">{t('details.info.support')}</div>
@@ -581,26 +571,19 @@ export function TemplateDetails() {
             <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <Info className="w-8 h-8" />
             </div>
-            <h3 className="text-2xl font-black text-neutral-900 mb-2">ওয়েবসাইট অর্ডার করতে লগইন প্রয়োজন</h3>
+            <h3 className="text-2xl font-black text-neutral-900 mb-2">{t('auth.login_required')}</h3>
             <p className="text-neutral-600 mb-6 font-medium">
-              ওয়েবসাইট অর্ডার করতে অনুগ্রহ করে প্রথমে লগইন অথবা নতুন অ্যাকাউন্ট নিবন্ধন করুন।
+              {t('auth.login_desc')}
             </p>
             <button 
               onClick={handleLoginRedirect}
               className="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 mb-3"
             >
-              লগইন করুন
+              {t('auth.login_now')}
             </button>
-            <Link 
-              to="/auth"
-              state={{ from: location, isRegister: true }}
-              className="w-full flex items-center justify-center bg-neutral-100 text-neutral-700 font-bold py-3.5 rounded-xl hover:bg-neutral-200 transition-colors mb-3"
-            >
-              রেজিস্ট্রেশন করুন
-            </Link>
             <button 
               onClick={() => setShowAuthModal(false)}
-              className="w-full text-neutral-500 font-bold py-2 hover:text-neutral-800 transition-colors"
+              className="w-full bg-neutral-100 text-neutral-700 font-bold py-3.5 rounded-xl hover:bg-neutral-200 transition-colors"
             >
               {t('auth.close')}
             </button>
@@ -634,10 +617,10 @@ export function TemplateDetails() {
                 {/* 1. Website Info */}
                 <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-neutral-200">
                   <h4 className="text-base md:text-lg font-bold text-neutral-900 mb-4 border-b border-neutral-100 pb-3">1. নির্বাচিত ওয়েবসাইট</h4>
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-neutral-700 mb-2">ওয়েবসাইটের ক্যাটাগরি</label>
-                      <input type="text" readOnly value={MOCK_TEMPLATE.category} className="w-full px-4 py-3 bg-neutral-100 border border-neutral-200 rounded-xl text-neutral-900 font-medium focus:outline-none" />
+                      <label className="block text-sm font-semibold text-neutral-700 mb-2">ওয়েবসাইটের নাম</label>
+                      <input type="text" readOnly value={MOCK_TEMPLATE.title} className="w-full px-4 py-3 bg-neutral-100 border border-neutral-200 rounded-xl text-neutral-900 font-medium focus:outline-none" />
                     </div>
                   </div>
                 </div>
@@ -677,10 +660,9 @@ export function TemplateDetails() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-neutral-700 mb-2">ওয়েবসাইটের নাম (যে নামে ওয়েবসাইট তৈরি করতে চান)</label>
+                      <label className="block text-sm font-semibold text-neutral-700 mb-2">Business Name (Optional)</label>
                       <input 
                         type="text" 
-                        required
                         value={formData.businessName}
                         onChange={e => setFormData({...formData, businessName: e.target.value})}
                         className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none" 
@@ -694,20 +676,21 @@ export function TemplateDetails() {
                   <h4 className="text-base md:text-lg font-bold text-neutral-900 mb-4 border-b border-neutral-100 pb-3">3. ডেলিভারি ও পেমেন্ট</h4>
                   
                   <div className="mb-6">
-                    <label className="block text-sm font-semibold text-neutral-700 mb-3">আপনার ওয়েবসাইটটি কত দিনের মধ্যে ডেলিভারি প্রয়োজন?</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="আপনার প্রয়োজনীয় সময় লিখুন (যেমন: ৭ দিন, ১৫ দিন, ২ মাস)"
-                      value={formData.deliveryTime}
-                      onChange={e => setFormData({...formData, deliveryTime: e.target.value})}
-                      className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none" 
-                    />
-                    {(/(^|\s)([1-7]|এক|দুই|তিন|চার|পাচ|ছয়|সাত)\s*(দিন|days?|d)\b/i.test(formData.deliveryTime) || formData.deliveryTime.includes('জরুরি') || formData.deliveryTime === '3' || formData.deliveryTime === '7' || formData.deliveryTime === '৩' || formData.deliveryTime === '৭') && (
-                      <div className="mt-3 p-3 bg-rose-50 text-rose-700 text-sm font-medium rounded-lg border border-rose-100 animate-in fade-in">
-                        দ্রুত ডেলিভারির জন্য অতিরিক্ত সার্ভিস চার্জ প্রযোজ্য হতে পারে। বিস্তারিত জানতে আমাদের সাপোর্ট টিমের সাথে যোগাযোগ করুন।
-                      </div>
-                    )}
+                    <label className="block text-sm font-semibold text-neutral-700 mb-3">ডেলিভারি সময়</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { time: 'জরুরি (৭ দিন)', price: '+৳৫,০০০ জরুরি ডেলিভারি চার্জ' },
+                        { time: '১৫ দিন', price: '' },
+                        { time: '৩০ দিন', price: '' },
+                        { time: 'Custom Time', price: '' }
+                      ].map(d => (
+                        <label key={d.time} className={cn("block relative p-4 rounded-xl border-2 cursor-pointer transition-all", formData.deliveryTime === d.time ? "border-indigo-600 bg-indigo-50" : "border-neutral-200 hover:border-neutral-300")}>
+                          <input type="radio" name="delivery" className="hidden" checked={formData.deliveryTime === d.time} onChange={() => setFormData({...formData, deliveryTime: d.time})} />
+                          <div className={cn("font-bold", formData.deliveryTime === d.time ? "text-indigo-700" : "text-neutral-700")}>{d.time}</div>
+                          {d.price && <div className="text-sm font-semibold text-rose-600 mt-1">{d.price}</div>}
+                        </label>
+                      ))}
+                    </div>
                   </div>
 
                   <div>
@@ -721,47 +704,28 @@ export function TemplateDetails() {
                       
                       <label className={cn("block relative p-4 rounded-xl border-2 cursor-pointer transition-all", formData.paymentOption === 'Installment' ? "border-indigo-600 bg-indigo-50" : "border-neutral-200 hover:border-neutral-300")}>
                         <input type="radio" name="payment" className="hidden" checked={formData.paymentOption === 'Installment'} onChange={() => setFormData({...formData, paymentOption: 'Installment'})} />
-                        <div className="font-bold text-neutral-900 mb-1">Installment Payment</div>
+                        <div className="font-bold text-neutral-900 mb-1">Installment (কিস্তি)</div>
                         <div className="text-sm text-neutral-500">মাসিক কিস্তিতে পেমেন্ট করুন</div>
                       </label>
                     </div>
 
                     {formData.paymentOption === 'Installment' && (
                       <div className="mt-4 p-4 md:p-5 bg-blue-50 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-2">
+                        <label className="block text-sm font-semibold text-blue-900 mb-3">কিস্তির মেয়াদ নির্বাচন করুন:</label>
+                        <div className="flex gap-6 mb-4">
+                          {['৬ মাস', '১২ মাস'].map(m => (
+                            <label key={m} className="flex items-center gap-2 cursor-pointer">
+                              <input type="radio" name="installment" className="w-5 h-5 text-indigo-600" checked={formData.installmentMonths === m} onChange={() => setFormData({...formData, installmentMonths: m})} />
+                              <span className="font-bold text-blue-900">{m}</span>
+                            </label>
+                          ))}
+                        </div>
                         <div className="bg-white/80 p-4 rounded-lg border border-blue-200">
                           <p className="text-sm font-bold text-neutral-900 mb-1">ডাউন পেমেন্ট আবশ্যক।</p>
-                          <p className="text-sm text-neutral-700 leading-relaxed">কিস্তিতে ওয়েবসাইট অর্ডার করতে প্রথমে নির্ধারিত ডাউন পেমেন্ট পরিশোধ করা বাধ্যতামূলক। ডাউন পেমেন্ট নিশ্চিত হওয়ার পরই ওয়েবসাইটের কাজ শুরু হবে। অবশিষ্ট অর্থ নির্বাচিত কিস্তি পরিকল্পনা অনুযায়ী পরিশোধ করতে হবে। কিস্তি সুবিধা গ্রহণ করলে মোট ওয়েবসাইট মূল্যের উপর অতিরিক্ত ১০% সার্ভিস চার্জ প্রযোজ্য হবে।</p>
+                          <p className="text-sm text-neutral-700">ওয়েবসাইটের কাজ শুরু করার পূর্বে নির্ধারিত ডাউন পেমেন্ট পরিশোধ করতে হবে। বাকি টাকা নির্বাচিত কিস্তি অনুযায়ী পরিশোধ করা যাবে।</p>
                         </div>
                       </div>
                     )}
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-neutral-200 mb-6">
-                  <h4 className="text-base md:text-lg font-bold text-neutral-900 mb-4 border-b border-neutral-100 pb-3">4. অর্ডার সামারি</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-neutral-600 font-medium">বেসিক মূল্য</span>
-                      <span className="font-bold text-neutral-900">৳{MOCK_TEMPLATE.startingPrice}</span>
-                    </div>
-                    {formData.paymentOption === 'Installment' && (
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-neutral-600 font-medium">সার্ভিস চার্জ (১০%)</span>
-                        <span className="font-bold text-rose-600">+৳{finalPrice - MOCK_TEMPLATE.startingPrice}</span>
-                      </div>
-                    )}
-                    <div className="border-t border-neutral-100 pt-3 flex justify-between items-center">
-                      <span className="font-bold text-neutral-900">মোট মূল্য</span>
-                      <span className="text-lg font-black text-indigo-600">৳{finalPrice}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                      <span className="text-indigo-900 font-bold">প্রয়োজনীয় ডাউন পেমেন্ট</span>
-                      <span className="font-black text-indigo-700">৳{requiredDownPayment}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-neutral-600 font-medium">বাকি টাকা</span>
-                      <span className="font-bold text-neutral-900">৳{remainingAmount}</span>
-                    </div>
                   </div>
                 </div>
 
@@ -793,7 +757,7 @@ export function TemplateDetails() {
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-300">
             
             <div className="px-6 py-5 border-b border-neutral-100 flex items-center justify-between">
-              <h3 className="text-xl font-black text-neutral-900">ডাউন পেমেন্ট</h3>
+              <h3 className="text-xl font-black text-neutral-900">Payment Process</h3>
               <button 
                 onClick={() => setShowPaymentModal(false)}
                 className="p-2 text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100 rounded-full transition-colors bg-neutral-50"
@@ -802,41 +766,7 @@ export function TemplateDetails() {
               </button>
             </div>
 
-            <div className="p-6 max-h-[80vh] overflow-y-auto">
-              <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl font-medium text-center mb-6 shadow-sm">
-                এই ওয়েবসাইটের কাজ শুরু করার জন্য প্রথমে আপনাকে ৳{requiredDownPayment} ডাউন পেমেন্ট প্রদান করতে হবে।
-              </div>
-              
-              <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-200 mb-6 space-y-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-neutral-600 font-medium">মোট মূল্য</span>
-                  <span className="font-bold text-neutral-900">৳{finalPrice}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm bg-indigo-100/50 p-2 rounded-lg">
-                  <span className="text-indigo-900 font-bold">প্রয়োজনীয় ডাউন পেমেন্ট</span>
-                  <span className="font-black text-indigo-700">৳{requiredDownPayment}</span>
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <button 
-                  onClick={() => {
-                    const message = `Order Request:\n\nCustomer Name: ${formData.fullName}\nMobile Number: ${formData.phone}\nWebsite Category: ${MOCK_TEMPLATE.category}\nWebsite Name: ${formData.businessName}\nWebsite Price: ৳${finalPrice}\nDown Payment Amount: ৳${requiredDownPayment}\nOrder ID: NEW_ORDER`;
-                    window.open(`https://wa.me/01613071344?text=${encodeURIComponent(message)}`, '_blank');
-                  }}
-                  className="w-full bg-[#25D366] text-white font-bold py-4 rounded-xl hover:bg-[#20bd5a] transition-colors shadow-lg shadow-green-200 flex items-center justify-center gap-2"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  সাপোর্টে কথা বলে ডাউন পেমেন্ট করুন
-                </button>
-              </div>
-
-              <div className="relative flex items-center py-2 mb-6">
-                <div className="flex-grow border-t border-neutral-200"></div>
-                <span className="flex-shrink-0 mx-4 text-neutral-400 text-sm font-medium">অথবা নিজে পেমেন্ট করুন</span>
-                <div className="flex-grow border-t border-neutral-200"></div>
-              </div>
-
+            <div className="p-6">
               <form onSubmit={submitPayment} className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-neutral-700 mb-3">Payment Method</label>
@@ -866,22 +796,6 @@ export function TemplateDetails() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-2">আপনি কত টাকা পাঠিয়েছেন</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-bold">৳</span>
-                    <input 
-                      type="number" 
-                      required
-                      min={100}
-                      value={formData.sentAmount}
-                      onChange={e => setFormData({...formData, sentAmount: e.target.value})}
-                      placeholder="e.g. 1000"
-                      className="w-full pl-8 pr-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 font-bold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none" 
-                    />
-                  </div>
-                </div>
-
-                <div>
                   <label className="block text-sm font-semibold text-neutral-700 mb-2">Transaction ID</label>
                   <input 
                     type="text" 
@@ -896,9 +810,9 @@ export function TemplateDetails() {
                 <div>
                   <label className="block text-sm font-semibold text-neutral-700 mb-2">Payment Screenshot</label>
                   <div className="border-2 border-dashed border-neutral-300 rounded-xl p-4 text-center hover:bg-neutral-50 transition-colors cursor-pointer group relative">
-                    <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" />
+                    <input type="file" required className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" />
                     <Upload className="w-6 h-6 text-indigo-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                    <span className="text-sm font-semibold text-neutral-600">Upload Screenshot (Optional)</span>
+                    <span className="text-sm font-semibold text-neutral-600">Upload Screenshot</span>
                   </div>
                 </div>
 
@@ -917,3 +831,5 @@ export function TemplateDetails() {
     </div>
   );
 }
+`;
+fs.writeFileSync('src/pages/TemplateDetails.tsx', newCode);

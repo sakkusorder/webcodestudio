@@ -27,6 +27,9 @@ const PORT = 3000;
 async function startServer() {
   const app = express();
 
+  // Trust proxy for rate limiting behind load balancers/proxies
+  app.set('trust proxy', 1);
+
   // Security Middlewares
   app.use(helmet({ contentSecurityPolicy: false })); // Disable CSP for Vite dev server compatibility
   app.use(globalLimiter);

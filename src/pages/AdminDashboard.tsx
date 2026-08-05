@@ -42,14 +42,14 @@ const SIDEBAR_MENU = [
 
 export function AdminDashboard() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { signOut } = useAuth();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem('wcs_admin_access');
-    logout();
+    await signOut();
     navigate('/');
   };
 

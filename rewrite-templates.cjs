@@ -1,4 +1,6 @@
-import { useLanguage } from '../contexts/LanguageContext';
+const fs = require('fs');
+
+const code = `import { useLanguage } from '../contexts/LanguageContext';
 import { ExternalLink, ShoppingCart, Code2, MessageCircle, Mail, HeadphonesIcon } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { MOCK_TEMPLATES } from '../data/templates';
@@ -24,7 +26,7 @@ export function Templates() {
         </h1>
         <p className="text-sm md:text-lg text-neutral-600 mb-4 md:mb-6">
           {activeCategory 
-            ? `Explore our collection of ${activeCategory} templates` 
+            ? \`Explore our collection of \${activeCategory} templates\` 
             : t('templates.subtitle')}
         </p>
       </div>
@@ -71,14 +73,14 @@ export function Templates() {
                 <h3 className="text-sm md:text-lg font-bold text-neutral-900 mb-3 md:mb-4 line-clamp-1">{template.title}</h3>
                 <div className="flex flex-col gap-2 mt-auto">
                   <Link 
-                    to={`/templates/${template.id}`}
+                    to={\`/templates/\${template.id}\`}
                     className="w-full flex items-center justify-center gap-1.5 md:gap-2 bg-neutral-100 text-neutral-700 px-2 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[11px] md:text-sm font-bold hover:bg-neutral-200 transition-colors"
                   >
                     <ExternalLink className="w-3 h-3 md:w-4 md:h-4" />
                     🌐 লাইভ ওয়েবসাইট
                   </Link>
                   <Link
-                    to={`/templates/${template.id}`} 
+                    to={\`/templates/\${template.id}\`} 
                     className="w-full flex items-center justify-center gap-1.5 md:gap-2 bg-indigo-600 text-white px-2 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[11px] md:text-sm font-bold hover:bg-indigo-700 transition-colors"
                   >
                     <ShoppingCart className="w-3 h-3 md:w-4 md:h-4" />
@@ -93,3 +95,6 @@ export function Templates() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync('src/pages/Templates.tsx', code);

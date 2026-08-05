@@ -1,4 +1,6 @@
+const fs = require('fs');
 
+const dashboardCode = `
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -455,3 +457,6 @@ export function Dashboard() {
     </div>
   );
 }
+`
+
+fs.writeFileSync('src/pages/Dashboard.tsx', dashboardCode);

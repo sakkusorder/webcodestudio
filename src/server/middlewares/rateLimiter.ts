@@ -9,9 +9,9 @@ export const globalLimiter = rateLimit({
 });
 
 export const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // Limit each IP to 5 login requests per `window` (here, per hour)
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 login requests per `window`
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many failed login attempts, please try again after an hour' }
+  message: { error: 'Too many failed login attempts, please try again after 15 minutes' }
 });

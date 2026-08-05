@@ -1,0 +1,101 @@
+--- src/components/Layout.tsx
++++ src/components/Layout.tsx
+@@ -9,6 +9,7 @@
+   const { language, setLanguage, t } = useLanguage();
+   const { isAuthenticated, user, logout } = useAuth();
+   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
++  const [sidebarOpen, setSidebarOpen] = useState(false);
+   const navigate = useNavigate();
+   const location = useLocation();
+ 
+@@ -19,17 +20,30 @@
+ 
+   return (
+     <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans flex flex-col">
+       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200 shadow-sm">
+         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+           <div className="flex justify-between items-center h-20">
+             {/* Left: Logo */}
+-            <div className="flex-shrink-0 flex items-center">
++            <div className="flex-shrink-0 flex items-center gap-4">
++              {isAuthenticated && (
++                <button 
++                  onClick={() => setSidebarOpen(true)}
++                  className="p-2 -ml-2 text-neutral-700 hover:bg-neutral-100 rounded-xl transition-colors"
++                >
++                  <Menu className="w-6 h-6" />
++                </button>
++              )}
+               <Link to="/" className="text-2xl font-black tracking-tighter text-indigo-700 flex items-center gap-2">
+                 <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+                   <span className="text-lg">W</span>
+                 </div>
+                 Web Code Studio
+               </Link>
+             </div>
+             
+             {/* Center: Search */}
+             <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
+@@ -46,8 +60,9 @@
+ 
+             {/* Right: Actions */}
+             <div className="hidden lg:flex items-center gap-6">
+-              <nav className="flex items-center gap-6">
++              {!isAuthenticated && (
++                <nav className="flex items-center gap-6">
+                 <Link to="/showcase" className="text-sm font-semibold text-neutral-600 hover:text-indigo-600 transition-colors">
+                   Showcase
+                 </Link>
+@@ -61,6 +76,7 @@
+                   Todos
+                 </Link>
+               </nav>
++              )}
+ 
+-              <div className="h-6 w-px bg-neutral-200"></div>
++              {!isAuthenticated && <div className="h-6 w-px bg-neutral-200"></div>}
+ 
+               <div className="flex items-center gap-4">
+                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors cursor-pointer">
+@@ -79,15 +95,9 @@
+                 
+                 {isAuthenticated ? (
+                   <div className="flex items-center gap-4">
+-                    <Link to={user?.role === 'admin' || user?.role === 'manager' ? '/admin' : '/dashboard'} className="flex items-center gap-2 text-sm font-semibold text-neutral-700 hover:text-indigo-600 transition-colors">
+-                      <LayoutDashboard className="w-4 h-4" />
+-                      Dashboard
+-                    </Link>
+-                    <button onClick={handleLogout} className="flex items-center gap-2 text-sm font-semibold text-neutral-500 hover:text-rose-600 transition-colors">
+-                      <LogOut className="w-4 h-4" />
+-                      Logout
+-                    </button>
++                    <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-black text-lg cursor-pointer" onClick={() => setSidebarOpen(true)}>
++                      {user?.name?.charAt(0) || 'U'}
++                    </div>
+                   </div>
+                 ) : (
+                   <>
+@@ -104,7 +114,7 @@
+             </div>
+ 
+             {/* Mobile menu button */}
+-            <div className="lg:hidden flex items-center gap-4">
++            {!isAuthenticated && (
++              <div className="lg:hidden flex items-center gap-4">
+                <button className="text-neutral-500 hover:text-neutral-900">
+                   <Search className="w-6 h-6" />
+                 </button>
+@@ -115,11 +125,12 @@
+                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+               </button>
+             </div>
++            )}
+           </div>
+         </div>
+ 
+         {/* Mobile Menu */}
+-        {mobileMenuOpen && (
++        {!isAuthenticated && mobileMenuOpen && (
+           <div className="lg:hidden bg-white border-t border-neutral-100 py-4 px-4 shadow-lg absolute w-full">
+             <nav className="flex flex-col gap-4 mb-6">
+               <Link to="/showcase" className="text-base font-semibold text-neutral-700 hover:text-indigo-600">

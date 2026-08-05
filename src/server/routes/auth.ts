@@ -12,7 +12,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-change-in-prod
 
 // Initialize Supabase fallback client
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 router.post('/register', authLimiter, async (req, res) => {
@@ -148,10 +148,6 @@ router.get('/profile', authenticateToken, (req: AuthRequest, res) => {
   
   const { passwordHash, ...userWithoutPassword } = user;
   res.json({ user: userWithoutPassword });
-});
-
-router.post('/forgot-password', async (req, res) => {
-  res.json({ message: 'Password reset feature coming soon' });
 });
 
 export default router;
