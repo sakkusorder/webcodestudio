@@ -11,11 +11,7 @@ interface Client {
   totalOrders: number;
 }
 
-const INITIAL_CLIENTS: Client[] = [
-  { id: '1', name: 'Alice Cooper', email: 'alice@example.com', phone: '+1 234 567 890', status: 'Active', joinDate: '2026-05-10', totalOrders: 3 },
-  { id: '2', name: 'Bob Builder', email: 'bob@example.com', phone: '+1 987 654 321', status: 'Active', joinDate: '2026-06-21', totalOrders: 1 },
-  { id: '3', name: 'Charlie Day', email: 'charlie@example.com', phone: '+1 555 123 456', status: 'Inactive', joinDate: '2025-11-05', totalOrders: 0 },
-];
+const INITIAL_CLIENTS: Client[] = [];
 
 export function Clients() {
   const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);

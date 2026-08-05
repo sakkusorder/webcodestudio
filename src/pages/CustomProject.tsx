@@ -91,6 +91,20 @@ export function CustomProject() {
 
   const processSubmission = async () => {
     try {
+      const newCustomOrder = {
+        id: `CUST-${Math.floor(1000 + Math.random() * 9000)}`,
+        client: formData.fullName || 'Unknown',
+        type: formData.projectType || 'Custom Project',
+        budget: formData.budget || 'Not specified',
+        timeline: formData.timeline || 'Not specified',
+        status: 'Pending',
+        date: new Date().toISOString().split('T')[0],
+        details: formData
+      };
+
+      const existingOrders = JSON.parse(localStorage.getItem('wcs_custom_orders') || '[]');
+      localStorage.setItem('wcs_custom_orders', JSON.stringify([newCustomOrder, ...existingOrders]));
+
       const response = await fetch('/api/custom-request', {
         method: 'POST',
         headers: {

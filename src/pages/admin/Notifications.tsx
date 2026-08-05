@@ -6,14 +6,7 @@ export function Notifications() {
   const [filter, setFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: 'Order', title: 'New Website Order', message: 'Emma Studio ordered a Portfolio Website ($1200).', date: '10 mins ago', user: 'Emma Studio', read: false },
-    { id: 2, type: 'Payment', title: 'New Installment Payment', message: 'Rahim Uddin paid $334 for EMI #1. Verification required.', date: '1 hour ago', user: 'Rahim Uddin', read: false },
-    { id: 3, type: 'Alert', title: 'Customer Missed Installment', message: 'TechFlow Inc. missed their EMI #2 payment of $334.', date: '2 hours ago', user: 'TechFlow Inc.', read: false },
-    { id: 4, type: 'Alert', title: 'Overdue Payment Alert', message: 'John Smith EMI #1 is overdue by 5 days.', date: '1 day ago', user: 'John Smith', read: true },
-    { id: 5, type: 'Support', title: 'New Support Ticket', message: 'New ticket #TCK-201 regarding payment gateway.', date: '2 days ago', user: 'Emma Studio', read: true },
-    { id: 6, type: 'System', title: 'New Client Registration', message: 'A new client has registered on the portal.', date: '3 days ago', user: 'New User', read: true }
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   const handleMarkAsRead = (id: number) => {
     setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));

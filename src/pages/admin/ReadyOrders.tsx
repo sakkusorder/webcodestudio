@@ -11,11 +11,7 @@ interface ReadyOrder {
   deliveryDate: string;
 }
 
-const INITIAL_ORDERS: ReadyOrder[] = [
-  { id: 'ORD-5091', website: 'Modern E-commerce', client: 'Alice Smith', price: '$299', paymentStatus: 'Paid', deliveryDate: '10 mins ago' },
-  { id: 'ORD-5092', website: 'Corporate Business', client: 'Tech Solutions', price: '$199', paymentStatus: 'Pending', deliveryDate: 'Pending' },
-  { id: 'ORD-5093', website: 'Creative Portfolio', client: 'Bob Designer', price: '$149', paymentStatus: 'Paid', deliveryDate: '1 day ago' },
-];
+const INITIAL_ORDERS: ReadyOrder[] = [];
 
 export function ReadyOrders() {
   const localOrdersRaw = JSON.parse(localStorage.getItem('wcs_orders') || '[]');

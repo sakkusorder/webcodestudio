@@ -15,18 +15,27 @@ interface CustomOrder {
   files: string[];
 }
 
-const INITIAL_ORDERS: CustomOrder[] = [
-  { id: 'ORD-2091', client: 'John Smith', type: 'Ecommerce', budget: '$2,500', timeline: '1 Month', requirements: 'I need a fast ecommerce store.', referenceUrl: 'amazon.com', status: 'Pending', date: '10 mins ago', files: ['req.pdf'] },
-  { id: 'ORD-2092', client: 'TechFlow Inc.', type: 'Corporate', budget: '$5,000', timeline: '2 Months', requirements: 'Corporate identity.', referenceUrl: 'apple.com', status: 'Reviewing', date: '2 hours ago', files: [] },
-];
+const INITIAL_ORDERS: CustomOrder[] = [];
 
 export function CustomOrders() {
-  const [orders, setOrders] = useState<CustomOrder[]>(INITIAL_ORDERS);
+  const localOrdersRaw = JSON.parse(localStorage.getItem('wcs_custom_orders') || '[]');
+  const localOrders = localOrdersRaw.map((o: any) => ({
+    ...o,
+    status: o.status as CustomOrder['status']
+  }));
+  const [orders, setOrders] = useState<CustomOrder[]>([...localOrders, ...INITIAL_ORDERS]);
   const [filter, setFilter] = useState('All');
   const [viewOrder, setViewOrder] = useState<CustomOrder | null>(null);
 
   const updateStatus = (id: string, newStatus: CustomOrder['status']) => {
-    setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o));
+    const updatedOrders = orders.map(o => o.id === id ? { ...o, status: newStatus } : o);
+    setOrders(updatedOrders);
+    
+    // Also update localStorage
+    const storedOrdersRaw = JSON.parse(localStorage.getItem('wcs_custom_orders') || '[]');
+    const storedOrders = storedOrdersRaw.map((o: any) => o.id === id ? { ...o, status: newStatus } : o);
+    localStorage.setItem('wcs_custom_orders', JSON.stringify(storedOrders));
+
     if (viewOrder && viewOrder.id === id) {
       setViewOrder({ ...viewOrder, status: newStatus });
     }

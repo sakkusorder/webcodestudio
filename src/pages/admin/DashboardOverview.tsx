@@ -9,44 +9,24 @@ import { Link } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 const STATS = [
-  { label: 'Total Customers', value: '1,248', change: '+12%', color: 'text-indigo-600', bg: 'bg-indigo-50', icon: Users },
-  { label: 'Website Orders', value: '384', change: '+8%', color: 'text-blue-600', bg: 'bg-blue-50', icon: ShoppingCart },
-  { label: 'Completed Projects', value: '210', change: '+15%', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
-  { label: 'Active Projects', value: '45', change: '+5%', color: 'text-amber-600', bg: 'bg-amber-50', icon: Activity },
-  { label: 'Total Revenue', value: '$124,500', change: '+22%', color: 'text-purple-600', bg: 'bg-purple-50', icon: DollarSign },
-  { label: 'Down Payments', value: '$32,400', change: '+10%', color: 'text-cyan-600', bg: 'bg-cyan-50', icon: DollarSign },
-  { label: 'Installment Revenue', value: '$42,300', change: '+18%', color: 'text-teal-600', bg: 'bg-teal-50', icon: TrendingUp },
-  { label: 'Pending Payments', value: '$12,450', change: '-2%', color: 'text-rose-600', bg: 'bg-rose-50', icon: Clock },
-  { label: 'Overdue Payments', value: '$4,200', change: '-5%', color: 'text-red-600', bg: 'bg-red-50', icon: AlertCircle },
-  { label: 'Monthly Revenue', value: '$18,200', change: '+12%', color: 'text-fuchsia-600', bg: 'bg-fuchsia-50', icon: DollarSign },
-  { label: 'Yearly Revenue', value: '$215,000', change: '+25%', color: 'text-pink-600', bg: 'bg-pink-50', icon: DollarSign },
+  { label: 'Total Customers', value: '0', change: '+12%', color: 'text-indigo-600', bg: 'bg-indigo-50', icon: Users },
+  { label: 'Website Orders', value: '0', change: '+8%', color: 'text-blue-600', bg: 'bg-blue-50', icon: ShoppingCart },
+  { label: 'Completed Projects', value: '0', change: '+15%', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
+  { label: 'Active Projects', value: '0', change: '+5%', color: 'text-amber-600', bg: 'bg-amber-50', icon: Activity },
+  { label: 'Total Revenue', value: '$0', change: '+22%', color: 'text-purple-600', bg: 'bg-purple-50', icon: DollarSign },
+  { label: 'Down Payments', value: '$0', change: '+10%', color: 'text-cyan-600', bg: 'bg-cyan-50', icon: DollarSign },
+  { label: 'Installment Revenue', value: '$0', change: '+18%', color: 'text-teal-600', bg: 'bg-teal-50', icon: TrendingUp },
+  { label: 'Pending Payments', value: '$0', change: '-2%', color: 'text-rose-600', bg: 'bg-rose-50', icon: Clock },
+  { label: 'Overdue Payments', value: '$0', change: '-5%', color: 'text-red-600', bg: 'bg-red-50', icon: AlertCircle },
+  { label: 'Monthly Revenue', value: '$0', change: '+12%', color: 'text-fuchsia-600', bg: 'bg-fuchsia-50', icon: DollarSign },
+  { label: 'Yearly Revenue', value: '$0', change: '+25%', color: 'text-pink-600', bg: 'bg-pink-50', icon: DollarSign },
 ];
 
-const REVENUE_DATA = [
-  { name: 'Jan', value: 12000 },
-  { name: 'Feb', value: 15000 },
-  { name: 'Mar', value: 14000 },
-  { name: 'Apr', value: 18000 },
-  { name: 'May', value: 16000 },
-  { name: 'Jun', value: 21000 },
-  { name: 'Jul', value: 18200 },
-];
+const REVENUE_DATA: any[] = [];
 
-const ORDERS_DATA = [
-  { name: 'Jan', ready: 30, custom: 12 },
-  { name: 'Feb', ready: 45, custom: 15 },
-  { name: 'Mar', ready: 40, custom: 20 },
-  { name: 'Apr', ready: 55, custom: 18 },
-  { name: 'May', ready: 48, custom: 25 },
-  { name: 'Jun', ready: 60, custom: 30 },
-  { name: 'Jul', ready: 50, custom: 28 },
-];
+const ORDERS_DATA: any[] = [];
 
-const RECENT_ORDERS = [
-  { id: 'ORD-2091', client: 'John Smith', type: 'Custom', amount: '$2,500', status: 'Pending', date: '10 mins ago' },
-  { id: 'ORD-2092', client: 'TechFlow Inc.', type: 'Ready', amount: '$299', status: 'Completed', date: '2 hours ago' },
-  { id: 'ORD-2093', client: 'Emma Studio', type: 'Custom', amount: '$1,200', status: 'Reviewing', date: '1 day ago' },
-];
+const RECENT_ORDERS: any[] = [];
 
 export function DashboardOverview() {
   return (

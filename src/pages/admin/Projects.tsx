@@ -11,12 +11,7 @@ interface Project {
   due: string;
 }
 
-const INITIAL_PROJECTS: Project[] = [
-  { id: 'PRJ-1029', name: 'Corporate Website Redesign', client: 'Acme Corp', status: 'Development', progress: 65, due: 'Aug 15' },
-  { id: 'PRJ-1030', name: 'E-Commerce App MVP', client: 'TechStart', status: 'Testing', progress: 90, due: 'Jul 30' },
-  { id: 'PRJ-1031', name: 'Restaurant Landing Page', client: 'Burger King', status: 'Review', progress: 40, due: 'Aug 05' },
-  { id: 'PRJ-1032', name: 'Portfolio Update', client: 'Sarah Connor', status: 'Completed', progress: 100, due: 'Jul 20' },
-];
+const INITIAL_PROJECTS: Project[] = [];
 
 export function Projects() {
   const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);

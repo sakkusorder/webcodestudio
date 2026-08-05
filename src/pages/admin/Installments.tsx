@@ -4,104 +4,18 @@ import { cn } from '../../lib/utils';
 
 // Mock Data
 const SUMMARY_STATS = {
-  totalOrders: 145,
-  downPaymentReceived: 45000,
-  remainingAmount: 120500,
-  thisMonthDue: 15,
-  overduePayments: 3,
-  completedInstallments: 420,
-  totalEmiRevenue: 85000
+  totalOrders: 0,
+  downPaymentReceived: 0,
+  remainingAmount: 0,
+  thisMonthDue: 0,
+  overduePayments: 0,
+  completedInstallments: 0,
+  totalEmiRevenue: 0
 };
 
-const NOTIFICATIONS = [
-  { id: 1, text: "Rahim Uddin hasn't paid this month's installment.", orderId: "ORD-2091", website: "Corporate Pro", due: 334, overdueDays: 5 },
-  { id: 2, text: "TechFlow Inc. requested a payment extension.", orderId: "ORD-2092", website: "TechFlow MVP", due: 334, overdueDays: 0 }
-];
+const NOTIFICATIONS: any[] = [];
 
-const INSTALLMENT_ORDERS = [
-  { 
-    id: 'EMI-1001', 
-    orderId: 'ORD-2091', 
-    customerName: 'Rahim Uddin', 
-    customerMobile: '+8801700000000',
-    customerEmail: 'rahim@example.com',
-    websiteName: 'Corporate Pro Redesign',
-    websiteCategory: 'Business',
-    totalPrice: 2500, 
-    downPayment: 500, 
-    remainingAmount: 2000, 
-    planMonths: 6, 
-    monthsPaid: 2, 
-    nextDueDate: '2026-08-15', 
-    status: 'Overdue',
-    orderDate: '2026-06-15',
-    deliveryStatus: 'Development',
-    schedule: [
-      { num: 1, dueDate: '2026-07-15', amount: 334, paymentDate: '2026-07-14', method: 'bKash', transactionId: 'BK10293847', status: 'Paid', receipt: 'bkash_ss.jpg' },
-      { num: 2, dueDate: '2026-08-15', amount: 334, paymentDate: null, method: null, transactionId: null, status: 'Overdue', receipt: null },
-      { num: 3, dueDate: '2026-09-15', amount: 334, paymentDate: null, method: null, transactionId: null, status: 'Pending', receipt: null },
-      { num: 4, dueDate: '2026-10-15', amount: 334, paymentDate: null, method: null, transactionId: null, status: 'Pending', receipt: null },
-      { num: 5, dueDate: '2026-11-15', amount: 334, paymentDate: null, method: null, transactionId: null, status: 'Pending', receipt: null },
-      { num: 6, dueDate: '2026-12-15', amount: 330, paymentDate: null, method: null, transactionId: null, status: 'Pending', receipt: null },
-    ]
-  },
-  { 
-    id: 'EMI-1002', 
-    orderId: 'ORD-2092', 
-    customerName: 'TechFlow Inc.', 
-    customerMobile: '+1234567890',
-    customerEmail: 'hello@techflow.com',
-    websiteName: 'SaaS Dashboard',
-    websiteCategory: 'Web App',
-    totalPrice: 5000, 
-    downPayment: 1000, 
-    remainingAmount: 4000, 
-    planMonths: 12, 
-    monthsPaid: 3, 
-    nextDueDate: '2026-08-28', 
-    status: 'Up to Date',
-    orderDate: '2026-05-28',
-    deliveryStatus: 'Delivered',
-    schedule: Array.from({length: 12}).map((_, i) => ({
-      num: i + 1, 
-      dueDate: `2026-${(i+6).toString().padStart(2, '0')}-28`, 
-      amount: 334, 
-      paymentDate: i < 3 ? `2026-${(i+6).toString().padStart(2, '0')}-27` : null, 
-      method: i < 3 ? 'Stripe' : null, 
-      transactionId: i < 3 ? `TXN${i}987654` : null, 
-      status: i < 3 ? 'Paid' : i === 3 ? 'Due' : 'Pending', 
-      receipt: null
-    }))
-  },
-  { 
-    id: 'EMI-1003', 
-    orderId: 'ORD-2093', 
-    customerName: 'Emma Studio', 
-    customerMobile: '+44987654321',
-    customerEmail: 'emma@studio.com',
-    websiteName: 'Portfolio Website',
-    websiteCategory: 'Portfolio',
-    totalPrice: 1200, 
-    downPayment: 200, 
-    remainingAmount: 1000, 
-    planMonths: 6, 
-    monthsPaid: 0, 
-    nextDueDate: '2026-08-05', 
-    status: 'Due',
-    orderDate: '2026-07-05',
-    deliveryStatus: 'Pending',
-    schedule: Array.from({length: 6}).map((_, i) => ({
-      num: i + 1, 
-      dueDate: `2026-${(i+8).toString().padStart(2, '0')}-05`, 
-      amount: 167, 
-      paymentDate: null, 
-      method: null, 
-      transactionId: null, 
-      status: i === 0 ? 'Due' : 'Pending', 
-      receipt: null
-    }))
-  }
-];
+const INSTALLMENT_ORDERS: any[] = [];
 
 export function Installments() {
   const [filter, setFilter] = useState('All');

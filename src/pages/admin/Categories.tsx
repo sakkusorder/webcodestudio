@@ -12,10 +12,7 @@ interface Category {
   count: number;
 }
 
-const INITIAL_CATEGORIES: Category[] = [
-  { id: '1', name: 'E-commerce', description: 'Online stores and shopping platforms', icon: null, coverImage: null, status: 'Active', count: 42 },
-  { id: '2', name: 'Corporate', description: 'Business and corporate websites', icon: null, coverImage: null, status: 'Active', count: 28 },
-];
+const INITIAL_CATEGORIES: Category[] = [];
 
 export function Categories() {
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);

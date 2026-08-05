@@ -19,38 +19,13 @@ const TABS = [
   { id: 'logs', label: 'Activity Logs', icon: Activity },
 ];
 
-const SALES_DATA = [
-  { date: '2026-07-01', ready: 1200, custom: 800, emi: 400 },
-  { date: '2026-07-08', ready: 1500, custom: 1200, emi: 600 },
-  { date: '2026-07-15', ready: 1100, custom: 2000, emi: 800 },
-  { date: '2026-07-22', ready: 1800, custom: 1500, emi: 500 },
-  { date: '2026-07-29', ready: 2200, custom: 1800, emi: 900 },
-];
+const SALES_DATA: any[] = [];
 
-const CATEGORY_DATA = [
-  { name: 'E-commerce', value: 45, color: '#4f46e5' },
-  { name: 'Portfolio', value: 25, color: '#0ea5e9' },
-  { name: 'Corporate', value: 20, color: '#8b5cf6' },
-  { name: 'Blog', value: 10, color: '#ec4899' },
-];
+const CATEGORY_DATA: any[] = [];
 
-const CUSTOMER_GROWTH = [
-  { month: 'Jan', users: 150 },
-  { month: 'Feb', users: 280 },
-  { month: 'Mar', users: 410 },
-  { month: 'Apr', users: 590 },
-  { month: 'May', users: 820 },
-  { month: 'Jun', users: 1050 },
-  { month: 'Jul', users: 1248 },
-];
+const CUSTOMER_GROWTH: any[] = [];
 
-const AUDIT_LOGS = [
-  { id: 1, action: 'Payment Completed', user: 'John Smith', detail: 'Paid $1,200 for Custom Order #ORD-2091', time: '10 mins ago', type: 'payment' },
-  { id: 2, action: 'Installment Paid', user: 'Emma Studio', detail: 'Paid $299 EMI for #ORD-1980', time: '2 hours ago', type: 'emi' },
-  { id: 3, action: 'Order Created', user: 'TechFlow Inc.', detail: 'Ordered Ready Template "E-Store Pro"', time: '5 hours ago', type: 'order' },
-  { id: 4, action: 'Website Updated', user: 'Admin', detail: 'Updated price for "Corporate Lite"', time: '1 day ago', type: 'admin' },
-  { id: 5, action: 'Customer Login', user: 'Alice Cooper', detail: 'Logged in from IP 192.168.1.1', time: '1 day ago', type: 'auth' },
-];
+const AUDIT_LOGS: any[] = [];
 
 export function Reports() {
   const [activeTab, setActiveTab] = useState('sales');
@@ -155,10 +130,10 @@ export function Reports() {
           <div className="animate-in fade-in duration-300 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {[
-                { label: 'Full Payment Revenue', value: '$84,500', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { label: 'Down Payment Revenue', value: '$22,400', icon: DollarSign, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                { label: 'Installment Revenue', value: '$17,600', icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
-                { label: 'Pending Revenue', value: '$12,450', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+                { label: 'Full Payment Revenue', value: '$0', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                { label: 'Down Payment Revenue', value: '$0', icon: DollarSign, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                { label: 'Installment Revenue', value: '$0', icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
+                { label: 'Pending Revenue', value: '$0', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
               ].map((stat, i) => (
                 <div key={i} className="bg-white rounded-2xl p-5 border border-neutral-200 shadow-sm flex items-center gap-4">
                   <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", stat.bg, stat.color)}>
@@ -300,10 +275,10 @@ export function Reports() {
           <div className="animate-in fade-in duration-300 space-y-6">
              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {[
-                { label: 'Total EMI Customers', value: '145', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                { label: 'Remaining EMI Balance', value: '$45,200', icon: DollarSign, color: 'text-rose-600', bg: 'bg-rose-50' },
-                { label: 'Expected This Month', value: '$8,400', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
-                { label: 'Collected This Month', value: '$6,200', icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                { label: 'Total EMI Customers', value: '0', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                { label: 'Remaining EMI Balance', value: '$0', icon: DollarSign, color: 'text-rose-600', bg: 'bg-rose-50' },
+                { label: 'Expected This Month', value: '$0', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
+                { label: 'Collected This Month', value: '$0', icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
               ].map((stat, i) => (
                 <div key={i} className="bg-white rounded-2xl p-5 border border-neutral-200 shadow-sm flex flex-col justify-between">
                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-4", stat.bg, stat.color)}>
