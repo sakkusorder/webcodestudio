@@ -1,247 +1,321 @@
-import React, { useState } from 'react';
-import { Search, Filter, AlertCircle, CheckCircle, Clock, Calendar, Download, Eye, ChevronRight, X, FileText, Check, FileDown, Bell, MessageSquare, CreditCard, User, Globe, Mail, Phone, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, AlertCircle, CheckCircle, Clock, Calendar, Download, Eye, ChevronRight, X, FileText, Check, FileDown, Bell, MessageSquare, CreditCard, User, Globe, Mail, Phone, ExternalLink, ShoppingCart , XCircle, DollarSign } from 'lucide-react';
 import { cn } from '../../lib/utils';
-
-// Mock Data
-const SUMMARY_STATS = {
-  totalOrders: 0,
-  downPaymentReceived: 0,
-  remainingAmount: 0,
-  thisMonthDue: 0,
-  overduePayments: 0,
-  completedInstallments: 0,
-  totalEmiRevenue: 0
-};
-
-const NOTIFICATIONS: any[] = [];
-
-const INSTALLMENT_ORDERS: any[] = [];
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export function Installments() {
-  const [filter, setFilter] = useState('All');
-  const [dateFilter, setDateFilter] = useState('This Month');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [actionMenuOpen, setActionMenuOpen] = useState<number | null>(null);
+  const { t } = useLanguage();
+  const [installments, setInstallments] = useState<any[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
 
-  // Close dropdown when clicking outside could be complex without a ref, so we'll just toggle for now.
-  const toggleActionMenu = (idx: number) => {
-    setActionMenuOpen(actionMenuOpen === idx ? null : idx);
+  const [stats, setStats] = useState({
+    totalEmiRevenue: 0,
+    downPaymentReceived: 0,
+    remainingAmount: 0,
+    overduePayments: 0,
+    thisMonthDue: 0
+  });
+
+  const loadInstallments = () => {
+    const plans = JSON.parse(localStorage.getItem('wcs_installments') || '[]');
+    setInstallments(plans);
+
+    const orders = JSON.parse(localStorage.getItem('wcs_orders') || '[]');
+    let downPayment = 0;
+    orders.forEach((o: any) => {
+      if(o.payment?.option === 'installment' && o.payment?.paidNow) {
+        downPayment += o.payment.paidNow;
+      }
+    });
+
+    let totalRemaining = 0;
+    let overdue = 0;
+    let thisMonth = 0;
+    let totalCollected = 0;
+    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    plans.forEach((plan: any) => {
+      totalRemaining += plan.totalRemaining;
+      plan.installments.forEach((inst: any) => {
+        if(inst.status === 'Paid') {
+          totalCollected += inst.amount;
+        } else {
+          const d = new Date(inst.dueDate);
+          if(d < now && inst.status !== 'Pending Verification') {
+            overdue++;
+            inst.status = 'Missed';
+          }
+          if(d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+            thisMonth += inst.amount;
+          }
+        }
+      });
+    });
+
+    // Update missed statuses to local storage implicitly in UI
+    
+    setStats({
+      totalEmiRevenue: totalCollected,
+      downPaymentReceived: downPayment,
+      remainingAmount: totalRemaining - totalCollected,
+      overduePayments: overdue,
+      thisMonthDue: thisMonth
+    });
   };
 
-  const filteredInstallments = INSTALLMENT_ORDERS.filter(i => {
-    const matchesFilter = filter === 'All' || i.status === filter;
-    const matchesSearch = i.customerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          i.orderId.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+  useEffect(() => {
+    loadInstallments();
+    const handleStorageChange = () => loadInstallments();
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const [filter, setFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredPlans = installments.filter(plan => {
+    const searchMatch = (plan.customerName || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                       (plan.orderId || '').toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (filter === 'All') return searchMatch;
+    
+    // Check if plan has installments matching filter
+    const hasStatus = plan.installments.some((inst: any) => {
+      if(filter === 'Missed') return inst.status === 'Missed' || (new Date(inst.dueDate) < new Date() && inst.status === 'Pending');
+      return inst.status === filter;
+    });
+
+    return searchMatch && hasStatus;
   });
+
+  const handleApproveInstallment = (plan: any, instId: string) => {
+    if(confirm('Approve this installment payment?')) {
+      const updatedPlans = installments.map(p => {
+        if (p.orderId === plan.orderId) {
+          return {
+            ...p,
+            installments: p.installments.map((i: any) => {
+              if (i.id === instId) {
+                return { ...i, status: 'Paid', paidDate: new Date().toISOString() };
+              }
+              return i;
+            })
+          };
+        }
+        return p;
+      });
+
+      localStorage.setItem('wcs_installments', JSON.stringify(updatedPlans));
+      
+      // Also update remaining in order
+      const orders = JSON.parse(localStorage.getItem('wcs_orders') || '[]');
+      const updatedOrders = orders.map((o: any) => {
+        if (o.id === plan.orderId) {
+          const amt = plan.installments.find((i:any) => i.id === instId)?.amount || 0;
+          return {
+            ...o,
+            payment: {
+              ...o.payment,
+              paidNow: (o.payment.paidNow || 0) + amt,
+              remaining: Math.max(0, (o.payment.remaining || 0) - amt)
+            }
+          }
+        }
+        return o;
+      });
+      localStorage.setItem('wcs_orders', JSON.stringify(updatedOrders));
+      
+      loadInstallments();
+      const updatedPlan = updatedPlans.find(p => p.orderId === plan.orderId);
+      if (updatedPlan) setSelectedPlan(updatedPlan);
+    }
+  };
+
+  const handleRejectInstallment = (plan: any, instId: string) => {
+    const reason = prompt('Please enter the reason for rejection:');
+    if(reason !== null) {
+      const updatedPlans = installments.map(p => {
+        if (p.orderId === plan.orderId) {
+          return {
+            ...p,
+            installments: p.installments.map((i: any) => {
+              if (i.id === instId) {
+                return { ...i, status: 'Rejected', rejectReason: reason };
+              }
+              return i;
+            })
+          };
+        }
+        return p;
+      });
+
+      localStorage.setItem('wcs_installments', JSON.stringify(updatedPlans));
+      loadInstallments();
+      const updatedPlan = updatedPlans.find(p => p.orderId === plan.orderId);
+      if (updatedPlan) setSelectedPlan(updatedPlan);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'Up to Date': case 'Paid': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'Overdue': case 'Failed': return 'bg-rose-100 text-rose-700 border-rose-200';
-      case 'Due': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'Pending': return 'bg-blue-50 text-blue-700 border-blue-200';
-      default: return 'bg-neutral-100 text-neutral-700 border-neutral-200';
+      case 'Paid': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      case 'Pending': return 'bg-neutral-50 text-neutral-600 border-neutral-200';
+      case 'Pending Verification': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'Rejected': return 'bg-rose-50 text-rose-600 border-rose-100';
+      case 'Missed': return 'bg-rose-50 text-rose-600 border-rose-100';
+      default: return 'bg-neutral-50 text-neutral-600 border-neutral-200';
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch(status) {
-      case 'Up to Date': case 'Paid': return <CheckCircle className="w-3 h-3" />;
-      case 'Overdue': case 'Failed': return <AlertCircle className="w-3 h-3" />;
-      case 'Due': return <Clock className="w-3 h-3" />;
-      default: return <Clock className="w-3 h-3" />;
-    }
-  };
+  if (selectedPlan) {
+    const paidCount = selectedPlan.installments.filter((i:any) => i.status === 'Paid').length;
+    const progress = (paidCount / selectedPlan.totalMonths) * 100;
 
-  if (selectedOrder) {
     return (
-      <div className="animate-in fade-in slide-in-from-right-8 duration-300 space-y-6 pb-12">
-        <div className="flex items-center gap-4">
-          <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-neutral-200 rounded-xl transition-colors bg-neutral-100 text-neutral-600">
-            <ChevronRight className="w-5 h-5 rotate-180" />
+      <div className="animate-in fade-in zoom-in-95 duration-300 space-y-6">
+        <div className="flex items-center justify-between">
+          <button onClick={() => setSelectedPlan(null)} className="flex items-center gap-2 text-neutral-500 hover:text-neutral-900 transition-colors font-medium text-sm">
+            <X className="w-4 h-4" />
+            Back to Installments
           </button>
-          <div>
-            <h2 className="text-2xl font-black text-neutral-900">Order Details: {selectedOrder.orderId}</h2>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm font-bold text-neutral-500">EMI ID: {selectedOrder.id}</span>
-              <span className={cn("px-2 py-0.5 rounded-md text-xs font-bold flex items-center gap-1 border", getStatusColor(selectedOrder.status))}>
-                {getStatusIcon(selectedOrder.status)} {selectedOrder.status}
-              </span>
-            </div>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <button className="flex items-center gap-2 bg-neutral-100 text-neutral-700 px-4 py-2 rounded-xl font-bold hover:bg-neutral-200 transition-colors">
-              <FileDown className="w-4 h-4" /> Export PDF
-            </button>
-            <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-700 transition-colors">
-              <MessageSquare className="w-4 h-4" /> Send Reminder
-            </button>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Customer Info */}
-          <div className="bg-white rounded-3xl border border-neutral-200 p-6 shadow-sm space-y-4">
-            <h3 className="font-black text-neutral-900 flex items-center gap-2 border-b border-neutral-100 pb-4"><User className="w-5 h-5 text-indigo-600" /> Customer Information</h3>
-            <div className="space-y-3 pt-2">
-              <div>
-                <div className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Name</div>
-                <div className="font-bold text-neutral-900">{selectedOrder.customerName}</div>
+          <div className="lg:col-span-1 space-y-6">
+            {/* Customer Info */}
+            <div className="bg-white rounded-3xl p-6 border border-neutral-100 shadow-sm flex flex-col items-center text-center">
+              <div className="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-2xl font-black mb-4">
+                {selectedPlan.customerName.charAt(0)}
               </div>
-              <div>
-                <div className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Mobile</div>
-                <div className="font-medium text-neutral-700 flex items-center gap-2"><Phone className="w-3 h-3" /> {selectedOrder.customerMobile}</div>
+              <h2 className="text-xl font-black text-neutral-900">{selectedPlan.customerName}</h2>
+              <div className="text-sm font-bold text-indigo-600 mb-6 bg-indigo-50 px-3 py-1 rounded-full mt-2">
+                Order: {selectedPlan.orderId}
               </div>
-              <div>
-                <div className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Email</div>
-                <div className="font-medium text-neutral-700 flex items-center gap-2"><Mail className="w-3 h-3" /> {selectedOrder.customerEmail}</div>
-              </div>
-            </div>
-          </div>
 
-          {/* Website Info */}
-          <div className="bg-white rounded-3xl border border-neutral-200 p-6 shadow-sm space-y-4">
-            <h3 className="font-black text-neutral-900 flex items-center gap-2 border-b border-neutral-100 pb-4"><Globe className="w-5 h-5 text-indigo-600" /> Website Information</h3>
-            <div className="space-y-3 pt-2">
-              <div>
-                <div className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Website Name</div>
-                <div className="font-bold text-neutral-900">{selectedOrder.websiteName}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Category</div>
-                  <div className="font-medium text-neutral-700">{selectedOrder.websiteCategory}</div>
+              <div className="w-full space-y-3 text-left">
+                <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl">
+                  <Phone className="w-5 h-5 text-neutral-400" />
+                  <div>
+                    <div className="text-xs text-neutral-500 font-bold">Phone</div>
+                    <div className="text-sm font-medium text-neutral-900">{selectedPlan.customerPhone}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Status</div>
-                  <div className="font-medium text-neutral-700">{selectedOrder.deliveryStatus}</div>
+                <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl">
+                  <Globe className="w-5 h-5 text-neutral-400" />
+                  <div>
+                    <div className="text-xs text-neutral-500 font-bold">Project</div>
+                    <div className="text-sm font-medium text-neutral-900 line-clamp-1">{selectedPlan.websiteName}</div>
+                  </div>
                 </div>
               </div>
-              <div>
-                <div className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Order Date</div>
-                <div className="font-medium text-neutral-700">{selectedOrder.orderDate}</div>
+            </div>
+
+            {/* Progress */}
+            <div className="bg-white rounded-3xl p-6 border border-neutral-100 shadow-sm">
+              <h3 className="text-lg font-bold text-neutral-900 mb-4">Payment Progress</h3>
+              <div className="mb-2 flex justify-between text-sm font-bold">
+                <span className="text-emerald-600">{paidCount} Paid</span>
+                <span className="text-neutral-400">{selectedPlan.totalMonths} Total</span>
+              </div>
+              <div className="h-3 bg-neutral-100 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+              </div>
+              <div className="mt-6 space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-neutral-500 font-bold">Total EMI Amount</span>
+                  <span className="font-bold text-neutral-900">৳{selectedPlan.totalRemaining.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-neutral-500 font-bold">Remaining</span>
+                  <span className="font-bold text-rose-600">
+                    ৳{(selectedPlan.totalRemaining - selectedPlan.installments.filter((i:any)=>i.status==='Paid').reduce((s:number, i:any)=>s+i.amount, 0)).toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Financial Summary */}
-          <div className="bg-white rounded-3xl border border-neutral-200 p-6 shadow-sm space-y-4">
-            <h3 className="font-black text-neutral-900 flex items-center gap-2 border-b border-neutral-100 pb-4"><CreditCard className="w-5 h-5 text-indigo-600" /> Financial Summary</h3>
-            <div className="space-y-3 pt-2">
-              <div className="flex justify-between items-center">
-                <div className="text-sm font-bold text-neutral-500">Total Price</div>
-                <div className="font-black text-neutral-900">${selectedOrder.totalPrice}</div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="text-sm font-bold text-neutral-500">Down Payment</div>
-                <div className="font-black text-emerald-600">${selectedOrder.downPayment}</div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="text-sm font-bold text-neutral-500">Remaining Balance</div>
-                <div className="font-black text-rose-600">${selectedOrder.remainingAmount}</div>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-neutral-100">
-                <div className="text-sm font-bold text-neutral-500">Selected EMI Plan</div>
-                <div className="font-black text-indigo-600">{selectedOrder.planMonths} Months</div>
-              </div>
-            </div>
-          </div>
-        </div>
+          <div className="lg:col-span-2 space-y-4">
+            <h3 className="text-lg font-bold text-neutral-900 mb-2">Installment Schedule</h3>
+            
+            {selectedPlan.installments.map((inst: any, idx: number) => {
+              const isMissed = new Date(inst.dueDate) < new Date() && inst.status === 'Pending';
+              const displayStatus = isMissed ? 'Missed' : inst.status;
 
-        {/* Monthly Installment Table */}
-        <div className="bg-white rounded-3xl border border-neutral-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
-            <h3 className="font-black text-neutral-900 text-lg">Monthly Installment Schedule</h3>
-            <div className="text-sm font-bold text-neutral-500">
-              Paid: <span className="text-emerald-600">{selectedOrder.monthsPaid}</span> / {selectedOrder.planMonths}
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left whitespace-nowrap">
-              <thead className="text-xs text-neutral-500 font-bold uppercase tracking-wider border-b border-neutral-100 bg-neutral-50/50">
-                <tr>
-                  <th className="px-6 py-4">No.</th>
-                  <th className="px-6 py-4">Due Date</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Payment Date</th>
-                  <th className="px-6 py-4">Method / TXN ID</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {selectedOrder.schedule.map((emi: any, idx: number) => (
-                  <tr key={idx} className="hover:bg-neutral-50/50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-neutral-900">{emi.num}</td>
-                    <td className="px-6 py-4 font-medium text-neutral-700">{emi.dueDate}</td>
-                    <td className="px-6 py-4 font-black text-neutral-900">${emi.amount}</td>
-                    <td className="px-6 py-4 font-medium text-neutral-500">{emi.paymentDate || '-'}</td>
-                    <td className="px-6 py-4">
-                      {emi.method ? (
-                        <div>
-                          <div className="font-bold text-neutral-900">{emi.method}</div>
-                          <div className="text-xs text-neutral-500 font-mono">{emi.transactionId}</div>
-                        </div>
-                      ) : '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={cn("px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1 w-fit border", getStatusColor(emi.status))}>
-                        {getStatusIcon(emi.status)} {emi.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {emi.receipt && (
-                          <button className="p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors" title="View Receipt">
-                            <ExternalLink className="w-4 h-4" />
-                          </button>
-                        )}
-                        {(emi.status === 'Due' || emi.status === 'Overdue' || emi.status === 'Pending') ? (
-                          <button 
-                            className="bg-neutral-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-neutral-800 transition-colors"
-                          >
-                            Mark Paid
-                          </button>
-                        ) : (
-                          <button className="bg-neutral-100 text-neutral-400 px-3 py-1.5 rounded-lg text-xs font-bold cursor-not-allowed">
-                            Verified
-                          </button>
-                        )}
-                        <div className="relative">
-                          <button onClick={() => toggleActionMenu(idx)} className="p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
-                          {actionMenuOpen === idx && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white border border-neutral-200 rounded-xl shadow-lg z-50 overflow-hidden text-left">
-                              <div className="py-1">
-                                {(emi.status === 'Pending' || emi.status === 'Due' || emi.status === 'Overdue') && (
-                                  <>
-                                    <button className="w-full text-left px-4 py-2 text-sm font-bold text-neutral-700 hover:bg-neutral-50">Approve Payment</button>
-                                    <button className="w-full text-left px-4 py-2 text-sm font-bold text-neutral-700 hover:bg-neutral-50">Mark as Paid (Offline)</button>
-                                    <button className="w-full text-left px-4 py-2 text-sm font-bold text-neutral-700 hover:bg-neutral-50">Change Due Date</button>
-                                    <button className="w-full text-left px-4 py-2 text-sm font-bold text-neutral-700 hover:bg-neutral-50">Apply Discount</button>
-                                    <button className="w-full text-left px-4 py-2 text-sm font-bold text-neutral-700 hover:bg-neutral-50">Apply Late Fee</button>
-                                    <button className="w-full text-left px-4 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50">Waive Installment</button>
-                                  </>
-                                )}
-                                {(emi.status === 'Paid') && (
-                                  <>
-                                    <button className="w-full text-left px-4 py-2 text-sm font-bold text-neutral-700 hover:bg-neutral-50">Reject Payment</button>
-                                    <button className="w-full text-left px-4 py-2 text-sm font-bold text-neutral-700 hover:bg-neutral-50">Add Note</button>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )}
+              return (
+                <div key={inst.id} className={cn(
+                  "p-5 rounded-2xl border transition-all",
+                  displayStatus === 'Paid' ? "bg-white border-neutral-200 opacity-70" :
+                  displayStatus === 'Pending Verification' ? "bg-white border-amber-200 shadow-md ring-1 ring-amber-100" :
+                  displayStatus === 'Missed' ? "bg-rose-50/30 border-rose-200" :
+                  "bg-white border-neutral-200"
+                )}>
+                  <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "w-12 h-12 rounded-full flex items-center justify-center font-black text-lg",
+                        displayStatus === 'Paid' ? "bg-emerald-100 text-emerald-600" :
+                        "bg-neutral-100 text-neutral-500"
+                      )}>
+                        {inst.number}
+                      </div>
+                      <div>
+                        <div className="font-bold text-neutral-900 text-lg">৳{inst.amount.toLocaleString()}</div>
+                        <div className="text-sm font-medium text-neutral-500 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" /> Due: {new Date(inst.dueDate).toLocaleDateString()}
                         </div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-xs font-bold border",
+                      getStatusColor(displayStatus)
+                    )}>
+                      {displayStatus}
+                    </span>
+                  </div>
+
+                  {inst.status === 'Pending Verification' && (
+                    <div className="mt-4 pt-4 border-t border-neutral-100/60 bg-amber-50/50 -mx-5 px-5 -mb-5 pb-5 rounded-b-2xl">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-bold text-amber-800 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Payment Verification Required
+                        </span>
+                        <div className="text-xs font-mono text-neutral-500">TrxID: {inst.trxId}</div>
+                      </div>
+                      
+                      {inst.screenshot && (
+                        <a href={inst.screenshot} target="_blank" rel="noreferrer" className="block text-sm text-indigo-600 font-bold hover:underline mb-4">
+                          View Payment Screenshot
+                        </a>
+                      )}
+
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => handleApproveInstallment(selectedPlan, inst.id)} className="flex-1 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-sm transition-all flex items-center justify-center gap-2">
+                          <CheckCircle className="w-4 h-4" /> Approve
+                        </button>
+                        <button onClick={() => handleRejectInstallment(selectedPlan, inst.id)} className="flex-1 py-2 bg-white border border-rose-200 text-rose-600 rounded-xl font-bold hover:bg-rose-50 transition-all flex items-center justify-center gap-2">
+                          <XCircle className="w-4 h-4" /> Reject
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {displayStatus === 'Missed' && (
+                    <div className="mt-4 pt-4 border-t border-rose-100">
+                      <button className="text-sm font-bold text-rose-600 flex items-center gap-2 hover:text-rose-700">
+                        <Bell className="w-4 h-4" />
+                        Send Reminder SMS
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -249,195 +323,100 @@ export function Installments() {
   }
 
   return (
-    <div className="animate-in fade-in zoom-in-95 duration-300 space-y-6 pb-12">
+    <div className="animate-in fade-in zoom-in-95 duration-300 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-2xl font-black text-neutral-900 tracking-tight">Installment Management</h2>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-white border border-neutral-200 rounded-xl shadow-sm p-1">
-            {['Today', 'This Week', 'This Month', 'This Year'].map(f => (
-              <button
-                key={f}
-                onClick={() => setDateFilter(f)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                  dateFilter === f ? "bg-neutral-900 text-white" : "text-neutral-500 hover:bg-neutral-100"
-                )}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-          <button className="flex items-center gap-2 bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-xl font-bold hover:bg-neutral-50 shadow-sm transition-colors text-sm">
-            <Download className="w-4 h-4" /> Export
-          </button>
+        <div>
+          <h2 className="text-2xl font-black text-neutral-900 tracking-tight">Installment Management</h2>
+          <p className="text-neutral-500 font-medium mt-1">Track and manage customer EMIs</p>
         </div>
       </div>
 
-      {/* Notifications Alert */}
-      {NOTIFICATIONS.length > 0 && (
-        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col gap-3">
-          <div className="flex items-center gap-2 text-rose-700 font-bold">
-            <AlertCircle className="w-5 h-5" /> Important Alerts ({NOTIFICATIONS.length})
-          </div>
-          <div className="space-y-2">
-            {NOTIFICATIONS.map(n => (
-              <div key={n.id} className="flex items-center justify-between bg-white/60 p-3 rounded-xl border border-rose-100">
-                <div>
-                  <span className="font-bold text-neutral-900 mr-2">{n.text}</span>
-                  <span className="text-sm font-medium text-neutral-500">({n.orderId} - {n.website})</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  {n.overdueDays > 0 && <span className="text-xs font-bold bg-rose-100 text-rose-700 px-2 py-1 rounded-md">{n.overdueDays} Days Overdue</span>}
-                  <button className="text-xs font-bold bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors">Take Action</button>
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white p-6 rounded-3xl border border-neutral-100 shadow-sm flex flex-col justify-center">
+          <div className="text-sm font-bold text-neutral-500 mb-2 flex items-center gap-2"><DollarSign className="w-4 h-4 text-emerald-600" /> Collected EMI</div>
+          <div className="text-3xl font-black text-neutral-900">৳{stats.totalEmiRevenue.toLocaleString()}</div>
         </div>
-      )}
-
-      {/* Dashboard Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-        {[
-          { label: 'Total Orders', value: SUMMARY_STATS.totalOrders, color: 'text-neutral-900' },
-          { label: 'Down Payment', value: `$${SUMMARY_STATS.downPaymentReceived}`, color: 'text-indigo-600' },
-          { label: 'Remaining', value: `$${SUMMARY_STATS.remainingAmount}`, color: 'text-amber-600' },
-          { label: 'Due This Month', value: SUMMARY_STATS.thisMonthDue, color: 'text-orange-600' },
-          { label: 'Overdue', value: SUMMARY_STATS.overduePayments, color: 'text-rose-600' },
-          { label: 'Completed', value: SUMMARY_STATS.completedInstallments, color: 'text-emerald-600' },
-          { label: 'Total Revenue', value: `$${SUMMARY_STATS.totalEmiRevenue}`, color: 'text-blue-600' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-neutral-200 p-4 shadow-sm flex flex-col justify-center items-center text-center">
-            <div className={cn("text-xl lg:text-2xl font-black mb-1", stat.color)}>{stat.value}</div>
-            <div className="text-[10px] lg:text-xs font-bold text-neutral-500 uppercase tracking-wider">{stat.label}</div>
-          </div>
-        ))}
+        <div className="bg-white p-6 rounded-3xl border border-neutral-100 shadow-sm flex flex-col justify-center">
+          <div className="text-sm font-bold text-neutral-500 mb-2 flex items-center gap-2"><CreditCard className="w-4 h-4 text-indigo-600" /> Remaining EMI</div>
+          <div className="text-3xl font-black text-neutral-900">৳{stats.remainingAmount.toLocaleString()}</div>
+        </div>
+        <div className="bg-white p-6 rounded-3xl border border-neutral-100 shadow-sm flex flex-col justify-center">
+          <div className="text-sm font-bold text-neutral-500 mb-2 flex items-center gap-2"><Calendar className="w-4 h-4 text-blue-600" /> This Month Due</div>
+          <div className="text-3xl font-black text-neutral-900">৳{stats.thisMonthDue.toLocaleString()}</div>
+        </div>
+        <div className="bg-white p-6 rounded-3xl border border-neutral-100 shadow-sm flex flex-col justify-center">
+          <div className="text-sm font-bold text-neutral-500 mb-2 flex items-center gap-2"><AlertCircle className="w-4 h-4 text-rose-600" /> Overdue Payments</div>
+          <div className="text-3xl font-black text-rose-600">{stats.overduePayments}</div>
+        </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-neutral-100 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2 bg-neutral-100 p-1 rounded-xl">
-            {['All', 'Up to Date', 'Due', 'Overdue'].map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={cn(
-                  "px-4 py-2 rounded-lg font-bold text-sm transition-colors",
-                  filter === f ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-900"
-                )}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-          <div className="relative flex-1 min-w-[250px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+      <div className="bg-white rounded-3xl p-6 border border-neutral-100 shadow-sm">
+        <div className="flex flex-wrap gap-4 mb-6">
+          <div className="flex-1 min-w-[200px] relative">
+            <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" />
             <input 
               type="text" 
-              placeholder="Search by customer or order..." 
+              placeholder="Search by customer name or order ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all text-sm font-medium"
+              className="w-full pl-12 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600/20"
             />
           </div>
+          <select value={filter} onChange={e => setFilter(e.target.value)} className="px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600/20 min-w-[150px]">
+            <option value="All">All Plans</option>
+            <option value="Pending Verification">Needs Verification</option>
+            <option value="Missed">Missed Payments</option>
+          </select>
         </div>
 
-        {/* Installment Order List */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="text-xs text-neutral-500 font-bold uppercase tracking-wider border-b border-neutral-100 bg-neutral-50/50">
-              <tr>
-                <th className="px-6 py-4">Order & Customer</th>
-                <th className="px-6 py-4">Website Info</th>
-                <th className="px-6 py-4">Financials</th>
-                <th className="px-6 py-4">Plan & Progress</th>
-                <th className="px-6 py-4">Next Due Date</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {filteredInstallments.map((item) => (
-                <tr key={item.id} className="hover:bg-neutral-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-neutral-900 text-base">{item.customerName}</div>
-                    <div className="text-xs font-medium text-neutral-500 flex items-center gap-1 mt-1"><Phone className="w-3 h-3"/> {item.customerMobile}</div>
-                    <div className="text-xs font-bold text-indigo-600 mt-1">{item.orderId}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-neutral-900">{item.websiteName}</div>
-                    <div className="text-xs font-medium text-neutral-500">{item.websiteCategory}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-neutral-500 w-12">Total:</span>
-                      <span className="font-bold text-neutral-900">${item.totalPrice}</span>
+        <div className="space-y-4">
+          {filteredPlans.map((plan, idx) => {
+            const paidCount = plan.installments.filter((i:any) => i.status === 'Paid').length;
+            const needsVerification = plan.installments.some((i:any) => i.status === 'Pending Verification');
+            const hasMissed = plan.installments.some((i:any) => new Date(i.dueDate) < new Date() && i.status === 'Pending');
+
+            return (
+              <div key={idx} onClick={() => setSelectedPlan(plan)} className="group bg-white border border-neutral-200 rounded-2xl p-5 hover:border-indigo-600/30 hover:shadow-md transition-all cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-xl">
+                    {plan.customerName.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="font-bold text-neutral-900 text-lg flex items-center gap-2">
+                      {plan.customerName}
+                      {needsVerification && <span className="bg-amber-100 text-amber-700 text-[10px] uppercase px-2 py-0.5 rounded-full font-black animate-pulse">Action Required</span>}
+                      {hasMissed && <span className="bg-rose-100 text-rose-700 text-[10px] uppercase px-2 py-0.5 rounded-full font-black">Overdue</span>}
                     </div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-neutral-500 w-12">Down:</span>
-                      <span className="font-bold text-emerald-600">${item.downPayment}</span>
+                    <div className="text-sm font-medium text-neutral-500 mt-1 flex items-center gap-4">
+                      <span className="flex items-center gap-1"><ShoppingCart className="w-4 h-4" /> {plan.orderId}</span>
+                      <span className="flex items-center gap-1"><Phone className="w-4 h-4" /> {plan.customerPhone}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-neutral-500 w-12">Rem:</span>
-                      <span className="font-bold text-rose-600">${item.remainingAmount}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-neutral-900 mb-1">{item.planMonths} Months Plan</div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="text-xs font-bold text-neutral-900">{item.monthsPaid} / {item.planMonths} Paid</div>
-                    </div>
-                    <div className="w-24 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-indigo-500 rounded-full" 
-                        style={{ width: `${(item.monthsPaid / item.planMonths) * 100}%` }}
-                      ></div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1 font-medium text-neutral-600">
-                      <Calendar className="w-4 h-4 text-neutral-400" /> {item.nextDueDate}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={cn(
-                      "px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1 w-fit border",
-                      getStatusColor(item.status)
-                    )}>
-                      {getStatusIcon(item.status)}
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => setSelectedOrder(item)}
-                      className="text-indigo-600 hover:text-indigo-800 font-bold text-sm bg-indigo-50 px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ml-auto"
-                    >
-                      <Eye className="w-4 h-4" /> View Details
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredInstallments.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center justify-center text-neutral-400">
-                      <AlertCircle className="w-8 h-8 mb-2 opacity-50" />
-                      <p className="font-medium text-sm">No installments found matching your criteria.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-6 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-0 border-neutral-100">
+                  <div className="text-center">
+                    <div className="text-xs font-bold text-neutral-400 uppercase mb-1">Progress</div>
+                    <div className="font-black text-neutral-900">{paidCount} / {plan.totalMonths}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs font-bold text-neutral-400 uppercase mb-1">Remaining</div>
+                    <div className="font-black text-rose-600">৳{(plan.totalRemaining - plan.installments.filter((i:any)=>i.status==='Paid').reduce((s:number, i:any)=>s+i.amount, 0)).toLocaleString()}</div>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center text-neutral-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {filteredPlans.length === 0 && (
+            <div className="text-center py-12 text-neutral-500 font-medium">
+              No installment plans found matching your criteria.
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
-
-// Dummy icon for dropdowns, etc.
-const MoreHorizontal = ({className}: {className?: string}) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-);
-

@@ -20,6 +20,13 @@ export interface Template {
   minAdvancePercentage: number;
   lastUpdated: string;
   status: 'Live' | 'Demo';
+  urgentDeliveryPossible?: boolean;
+  urgentDeliveryCharge?: number;
+  installmentAvailable?: boolean;
+  installmentOptions?: string[];
+  downPaymentAmount?: number;
+  adminStatus?: 'Active' | 'Hidden' | 'Draft';
+  totalOrders?: number;
   isFeatured?: boolean;
   featured?: boolean;
   isClientProject?: boolean;
@@ -65,3 +72,28 @@ export const getStoredTemplates = (): Template[] => {
 };
 export const MOCK_TEMPLATES: Template[] = getStoredTemplates();
 
+
+
+export interface CategoryInfo {
+  id: string;
+  name: string;
+  icon?: string;
+  description?: string;
+  status: 'Active' | 'Inactive';
+}
+
+export const getStoredCategories = (): CategoryInfo[] => {
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('wcs_categories');
+    if (stored) return JSON.parse(stored);
+    
+    const defaults = CATEGORIES.map((name, i) => ({
+      id: `cat-${i}`,
+      name,
+      status: 'Active' as const
+    }));
+    localStorage.setItem('wcs_categories', JSON.stringify(defaults));
+    return defaults;
+  }
+  return [];
+};

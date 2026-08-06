@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ExternalLink, ShoppingCart, Search, LayoutGrid, List, Filter, Star, CheckCircle2, PlayCircle, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -70,7 +70,7 @@ export function Showcase() {
               </h3>
               <div className="space-y-2">
                 {['All', 'Live', 'Demo'].map(status => (
-                  <label key={status} className="flex items-center gap-3 cursor-pointer group">
+                  <label key={status === "Demo" ? "Live Project" : status} className="flex items-center gap-3 cursor-pointer group">
                     <div className={cn(
                       "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
                       selectedStatus === status ? "bg-indigo-600 border-indigo-600" : "border-neutral-300 group-hover:border-indigo-400"

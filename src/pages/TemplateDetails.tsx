@@ -321,7 +321,7 @@ export function TemplateDetails() {
                   )}
                 >
                   <ExternalLink className="w-5 h-5" />
-                  {template.status === 'Live' ? 'Live Website' : 'Demo Website'}
+                  {template.status === 'Live' ? 'Live Website' : 'Live Website'}
                 </a>
               </div>
             </div>

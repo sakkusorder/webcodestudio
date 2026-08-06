@@ -33,7 +33,7 @@ export default function Checkout() {
   // Get minimum downpayment from admin config (fallback to 30)
   const minDownPaymentPercentage = parseInt(localStorage.getItem('wcs_admin_min_downpayment') || '30', 10);
   const [downPaymentPercentage, setDownPaymentPercentage] = useState(minDownPaymentPercentage);
-  const [paymentMethod, setPaymentMethod] = useState<'bkash' | 'nagad' | 'sslcommerz' | 'card'>('sslcommerz');
+  const [paymentMethod, setPaymentMethod] = useState<'bkash' | 'nagad' | 'sslcommerz' | 'card' | 'whatsapp'>('sslcommerz');
 
   useEffect(() => {
     // Both showcase and templates use getStoredTemplates() in this mock app

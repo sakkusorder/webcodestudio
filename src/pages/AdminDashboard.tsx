@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { cn } from '../lib/utils';
 import { 
   LayoutDashboard, Globe, Tags, ShoppingCart, CheckCircle, 
@@ -13,8 +14,7 @@ import {
 import { DashboardOverview } from './admin/DashboardOverview';
 import { Websites } from './admin/Websites';
 import { Categories } from './admin/Categories';
-import { CustomOrders } from './admin/CustomOrders';
-import { ReadyOrders } from './admin/ReadyOrders';
+import { Orders } from './admin/Orders';
 import { Clients as UsersAdmin } from './admin/Clients';
 import { Support } from './admin/Support';
 import { Payments } from './admin/Payments';
@@ -24,28 +24,31 @@ import { Reports } from './admin/Reports';
 import { Homepage } from './admin/Homepage';
 import { Settings as AdminSettings } from './admin/Settings';
 
-const SIDEBAR_MENU = [
-  { id: 'dashboard', path: '', icon: LayoutDashboard, label: 'Dashboard' },
-  { id: 'websites', path: 'websites', icon: Globe, label: 'Website Management' },
-  { id: 'categories', path: 'categories', icon: Tags, label: 'Categories' },
-  { id: 'homepage', path: 'homepage', icon: LayoutTemplate, label: 'Homepage' },
-  { id: 'custom-orders', path: 'custom-orders', icon: ShoppingCart, label: 'Custom Orders', badge: 2 },
-  { id: 'ready-orders', path: 'ready-orders', icon: CheckCircle, label: 'Ready Orders' },
-  { id: 'users', path: 'users', icon: Users, label: 'Users' },
-  { id: 'support', path: 'support', icon: LifeBuoy, label: 'Support', badge: 5 },
-  { id: 'payments', path: 'payments', icon: Receipt, label: 'Payments' },
-  { id: 'installments', path: 'installments', icon: Clock, label: 'Installments' },
-  { id: 'reports', path: 'reports', icon: BarChart, label: 'Reports' },
-  { id: 'settings', path: 'settings', icon: Settings, label: 'Settings' },
-  { id: 'notifications', path: 'notifications', icon: Bell, label: 'Notifications', badge: 3 },
-];
+
 
 export function AdminDashboard() {
+  const { t, language, setLanguage } = useLanguage();
+  
+  const SIDEBAR_MENU: any[] = [
+    { id: 'dashboard', path: '', icon: LayoutDashboard, label: t('admin.dashboard') },
+    { id: 'users', path: 'users', icon: Users, label: t('admin.users') },
+    { id: 'categories', path: 'categories', icon: Tags, label: t('admin.website_categories') },
+    { id: 'websites', path: 'websites', icon: Globe, label: t('admin.website_management') },
+    { id: 'orders', path: 'orders', icon: ShoppingCart, label: t('admin.orders') },
+    { id: 'payments', path: 'payments', icon: Receipt, label: t('admin.payments') },
+    { id: 'installments', path: 'installments', icon: Clock, label: t('admin.installments') },
+    { id: 'support', path: 'support', icon: LifeBuoy, label: t('admin.support_tickets') },
+    { id: 'notifications', path: 'notifications', icon: Bell, label: t('admin.notifications') },
+    { id: 'settings', path: 'settings', icon: Settings, label: t('admin.settings') },
+  ];
+
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   const handleLogout = async () => {
     localStorage.removeItem('wcs_admin_access');
@@ -120,7 +123,7 @@ export function AdminDashboard() {
         <div className="p-4 border-t border-neutral-800">
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-neutral-400 hover:bg-neutral-800 hover:text-white transition-colors">
             <LogOut className="w-5 h-5 text-neutral-500" />
-            Logout
+            {t('admin.logout')}
           </button>
         </div>
       </aside>
@@ -144,14 +147,41 @@ export function AdminDashboard() {
               <Menu className="w-5 h-5" />
             </button>
             <h1 className="text-xl sm:text-2xl font-black text-neutral-900 capitalize tracking-tight hidden sm:block">
-              {SIDEBAR_MENU.find(m => m.path === currentPath || (currentPath === '' && m.path === ''))?.label || 'Admin Panel'}
+              {SIDEBAR_MENU.find(m => m.path === currentPath || (currentPath === '' && m.path === ''))?.label || t('admin.dashboard')}
             </h1>
           </div>
           
+          
           <div className="flex items-center gap-4 sm:gap-6">
+            <button 
+              onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
+              className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold rounded-lg text-sm transition-colors"
+            >
+              {language === 'en' ? 'বাংলা' : 'English'}
+            </button>
+
             <div className="relative hidden md:block">
-              <input type="text" placeholder="Search everywhere..." className="pl-10 pr-4 py-2 bg-neutral-100 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none w-64 transition-all" />
+              <input 
+                type="text" 
+                placeholder="Search everywhere..." 
+                value={globalSearch}
+                onChange={(e) => {
+                  setGlobalSearch(e.target.value);
+                  setShowSearchResults(e.target.value.length > 0);
+                }}
+                onFocus={() => setShowSearchResults(globalSearch.length > 0)}
+                onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+                className="pl-10 pr-4 py-2 bg-neutral-100 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none w-64 transition-all" 
+              />
               <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
+              {showSearchResults && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-neutral-100 overflow-hidden z-50">
+                  <div className="p-3">
+                    <div className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Search Results</div>
+                    <div className="text-sm text-neutral-500 py-2 text-center">Press Enter to search across all modules for "{globalSearch}"</div>
+                  </div>
+                </div>
+              )}
             </div>
             
             <Link to="/admin/notifications" className="relative p-2 text-neutral-600 hover:bg-neutral-100 rounded-xl transition-colors">
@@ -178,8 +208,7 @@ export function AdminDashboard() {
             <Route path="/websites" element={<Websites />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/homepage" element={<Homepage />} />
-            <Route path="/custom-orders" element={<CustomOrders />} />
-            <Route path="/ready-orders" element={<ReadyOrders />} />
+            <Route path="/orders" element={<Orders />} />
             <Route path="/users" element={<UsersAdmin />} />
             <Route path="/support" element={<Support />} />
             <Route path="/payments" element={<Payments />} />

@@ -1,136 +1,152 @@
-import React, { useState } from 'react';
-import { PlusCircle, Search, Filter, Edit, Trash2, Tag, Image as ImageIcon, UploadCloud } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { PlusCircle, Search, Edit, Trash2, Eye, EyeOff, Tag, Image as ImageIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
-
-interface Category {
-  id: string;
-  name: string;
-  description: string;
-  icon: string | null;
-  coverImage: string | null;
-  status: 'Active' | 'Hidden';
-  count: number;
-}
-
-const INITIAL_CATEGORIES: Category[] = [];
+import { CategoryInfo, getStoredCategories } from '../../data/templates';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export function Categories() {
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const { t } = useLanguage();
+  const [categories, setCategoriesState] = useState<CategoryInfo[]>([]);
+
+  useEffect(() => {
+    setCategoriesState(getStoredCategories());
+  }, []);
+
+  const setCategories = (newCategories: CategoryInfo[] | ((prev: CategoryInfo[]) => CategoryInfo[])) => {
+    setCategoriesState((prev) => {
+      const updated = typeof newCategories === 'function' ? newCategories(prev) : newCategories;
+      localStorage.setItem('wcs_categories', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-
-  const [formData, setFormData] = useState({ name: '', description: '', status: 'Active' as 'Active' | 'Hidden' });
-  const [iconPreview, setIconPreview] = useState<string | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const [formData, setFormData] = useState<Partial<CategoryInfo>>({
+    name: '',
+    description: '',
+    icon: '',
+    status: 'Active'
+  });
 
   const handleDelete = (id: string) => {
-    if (confirm('Delete this category?')) {
+    if (confirm('Are you sure you want to delete this category?')) {
       setCategories(categories.filter(c => c.id !== id));
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setPreview: (val: string | null) => void) => {
-    if (e.target.files && e.target.files[0]) {
-      setPreview(URL.createObjectURL(e.target.files[0]));
-    }
+  const toggleStatus = (id: string) => {
+    setCategories(categories.map(c => 
+      c.id === id ? { ...c, status: c.status === 'Active' ? 'Inactive' : 'Active' } : c
+    ));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
-      setCategories(categories.map(c => c.id === editingId ? { ...c, ...formData, icon: iconPreview, coverImage: coverPreview } : c));
-      setEditingId(null);
+      setCategories(categories.map(c => c.id === editingId ? { ...c, ...formData } as CategoryInfo : c));
     } else {
-      const newCat: Category = {
-        id: Date.now().toString(),
-        name: formData.name,
-        description: formData.description,
-        status: formData.status,
-        icon: iconPreview,
-        coverImage: coverPreview,
-        count: 0
+      const newCategory: CategoryInfo = {
+        id: `cat-${Date.now()}`,
+        name: formData.name || '',
+        description: formData.description || '',
+        icon: formData.icon || '',
+        status: formData.status as 'Active' | 'Inactive'
       };
-      setCategories([newCat, ...categories]);
+      setCategories([newCategory, ...categories]);
     }
     setIsAdding(false);
-    resetForm();
+    setEditingId(null);
   };
 
-  const resetForm = () => {
-    setFormData({ name: '', description: '', status: 'Active' });
-    setIconPreview(null);
-    setCoverPreview(null);
+  const handleEdit = (category: CategoryInfo) => {
+    setFormData({
+      name: category.name,
+      description: category.description,
+      icon: category.icon,
+      status: category.status
+    });
+    setEditingId(category.id);
+    setIsAdding(true);
   };
 
-  const openEdit = (cat: Category) => {
-    setFormData({ name: cat.name, description: cat.description, status: cat.status });
-    setIconPreview(cat.icon);
-    setCoverPreview(cat.coverImage);
-    setEditingId(cat.id);
-  };
+  const filteredCategories = categories.filter(c => 
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  if (isAdding || editingId) {
+  if (isAdding) {
     return (
-      <div className="animate-in fade-in zoom-in-95 duration-300 max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-black text-neutral-900 tracking-tight">{editingId ? 'Edit Category' : 'Create Category'}</h2>
-          <button onClick={() => { setIsAdding(false); setEditingId(null); resetForm(); }} className="text-neutral-500 hover:text-neutral-900 font-bold">Cancel</button>
+      <div className="animate-in fade-in zoom-in-95 duration-300">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-black text-neutral-900 tracking-tight">
+              {editingId ? 'Edit Category' : 'Add New Category'}
+            </h2>
+            <p className="text-neutral-500 font-medium mt-1">Manage website categories</p>
+          </div>
+          <button 
+            onClick={() => { setIsAdding(false); setEditingId(null); }}
+            className="px-4 py-2 text-neutral-600 bg-white border border-neutral-200 rounded-xl font-bold hover:bg-neutral-50"
+          >
+            Cancel
+          </button>
         </div>
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-neutral-200 shadow-sm p-8 space-y-6">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-neutral-700 mb-2">Category Icon</label>
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 rounded-xl cursor-pointer hover:bg-neutral-50 hover:border-indigo-300 transition-colors overflow-hidden">
-                {iconPreview ? (
-                  <img src={iconPreview} alt="Icon" className="w-full h-full object-contain p-2" />
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-4 text-neutral-500">
-                    <UploadCloud className="w-6 h-6 mb-2 text-indigo-500" />
-                    <p className="text-xs font-medium">Upload Icon</p>
-                  </div>
-                )}
-                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, setIconPreview)} />
-              </label>
+
+        <div className="bg-white rounded-3xl p-6 md:p-8 border border-neutral-100 shadow-sm shadow-neutral-200/50">
+          <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-neutral-900">Category Name *</label>
+              <input 
+                type="text" 
+                required
+                value={formData.name}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all font-medium"
+                placeholder="e.g. E-Commerce"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-neutral-900">Thumbnail / Icon URL (Optional)</label>
+              <input 
+                type="text" 
+                value={formData.icon}
+                onChange={e => setFormData({ ...formData, icon: e.target.value })}
+                className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all font-medium"
+                placeholder="https://..."
+              />
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-neutral-700 mb-2">Cover Image</label>
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 rounded-xl cursor-pointer hover:bg-neutral-50 hover:border-indigo-300 transition-colors overflow-hidden">
-                {coverPreview ? (
-                  <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-4 text-neutral-500">
-                    <ImageIcon className="w-6 h-6 mb-2 text-indigo-500" />
-                    <p className="text-xs font-medium">Upload Cover</p>
-                  </div>
-                )}
-                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, setCoverPreview)} />
-              </label>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-neutral-900">Description (Optional)</label>
+              <textarea 
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                rows={4}
+                className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all font-medium resize-none"
+                placeholder="Description of the category..."
+              />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-bold text-neutral-700 mb-1">Category Name</label>
-            <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-neutral-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all" />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-neutral-700 mb-1">Description</label>
-            <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-neutral-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all" />
-          </div>
-           <div>
-            <label className="block text-sm font-bold text-neutral-700 mb-1">Status</label>
-            <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-neutral-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition-all">
-              <option value="Active">Active</option>
-              <option value="Hidden">Hidden</option>
-            </select>
-          </div>
-          <div className="flex justify-end pt-4">
-            <button type="submit" className="px-6 py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors w-full sm:w-auto">
-              {editingId ? 'Update Category' : 'Save Category'}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-neutral-900">Status</label>
+              <select 
+                value={formData.status}
+                onChange={e => setFormData({ ...formData, status: e.target.value as any })}
+                className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all font-medium"
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+
+            <button type="submit" className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/30 hover:bg-indigo-700 transition-all">
+              {editingId ? 'Save Changes' : 'Create Category'}
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     );
   }
@@ -138,56 +154,106 @@ export function Categories() {
   return (
     <div className="animate-in fade-in zoom-in-95 duration-300 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-2xl font-black text-neutral-900 tracking-tight">Categories</h2>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <input type="text" placeholder="Search categories..." className="pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none w-64 shadow-sm" />
-            <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-3" />
-          </div>
-          <button onClick={() => setIsAdding(true)} className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:bg-indigo-700 transition-colors">
-            <PlusCircle className="w-4 h-4" /> Create Category
-          </button>
+        <div>
+          <h2 className="text-2xl font-black text-neutral-900 tracking-tight">{t('admin.website_categories')}</h2>
+          <p className="text-neutral-500 font-medium mt-1">Manage website categories</p>
         </div>
+        <button 
+          onClick={() => { 
+            setFormData({ name: '', description: '', icon: '', status: 'Active' });
+            setIsAdding(true); 
+          }}
+          className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-600/30 hover:bg-indigo-700 transition-all"
+        >
+          <PlusCircle className="w-5 h-5" />
+          Add Category
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categories.map((category) => (
-          <div key={category.id} className="bg-white rounded-3xl border border-neutral-200 shadow-sm flex flex-col hover:border-indigo-300 transition-colors group overflow-hidden">
-            {category.coverImage ? (
-              <div className="h-32 w-full bg-neutral-100">
-                <img src={category.coverImage} className="w-full h-full object-cover" alt="" />
-              </div>
-            ) : (
-              <div className="h-32 w-full bg-indigo-50 flex items-center justify-center">
-                <ImageIcon className="w-8 h-8 text-indigo-200" />
-              </div>
-            )}
-            <div className="p-6 flex-1 flex flex-col">
-              <div className="flex items-start justify-between mb-4 -mt-10">
-                <div className="w-16 h-16 bg-white shadow-sm border border-neutral-100 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden">
-                  {category.icon ? <img src={category.icon} className="w-10 h-10 object-contain" alt="" /> : <Tag className="w-8 h-8 text-indigo-400" />}
-                </div>
-                <span className={cn(
-                  "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white shadow-sm",
-                  category.status === 'Active' ? "text-emerald-600" : "text-neutral-500"
-                )}>
-                  {category.status}
-                </span>
-              </div>
-              
-              <h3 className="text-lg font-bold text-neutral-900 mb-1">{category.name}</h3>
-              <p className="text-sm font-medium text-neutral-500 line-clamp-2 flex-1">{category.description}</p>
-              
-              <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between">
-                <div className="text-sm font-bold text-neutral-900">{category.count} Websites</div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => openEdit(category)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit className="w-4 h-4" /></button>
-                  <button onClick={() => handleDelete(category.id)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="bg-white rounded-3xl p-6 border border-neutral-100 shadow-sm shadow-neutral-200/50">
+        <div className="mb-6 max-w-sm relative">
+          <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <input 
+            type="text" 
+            placeholder="Search categories..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all font-medium"
+          />
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left whitespace-nowrap">
+            <thead>
+              <tr className="border-b border-neutral-100">
+                <th className="pb-4 font-bold text-neutral-400 text-sm">Category Info</th>
+                <th className="pb-4 font-bold text-neutral-400 text-sm">Status</th>
+                <th className="pb-4 font-bold text-neutral-400 text-sm text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {filteredCategories.map(category => (
+                <tr key={category.id} className="hover:bg-neutral-50/50 transition-colors group">
+                  <td className="py-4">
+                    <div className="flex items-center gap-4">
+                      {category.icon ? (
+                        <img src={category.icon} alt={category.name} className="w-12 h-12 rounded-xl object-cover" />
+                      ) : (
+                        <div className="w-12 h-12 bg-neutral-100 rounded-xl flex items-center justify-center">
+                          <Tag className="w-5 h-5 text-neutral-400" />
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-bold text-neutral-900">{category.name}</div>
+                        {category.description && (
+                          <div className="text-sm text-neutral-500 max-w-md truncate">{category.description}</div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-4">
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-xs font-bold",
+                      category.status === 'Active' ? "bg-emerald-50 text-emerald-600" : "bg-neutral-100 text-neutral-600"
+                    )}>
+                      {category.status}
+                    </span>
+                  </td>
+                  <td className="py-4 text-right">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => toggleStatus(category.id)}
+                        title={category.status === 'Active' ? 'Hide' : 'Show'}
+                        className="p-2 text-neutral-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                      >
+                        {category.status === 'Active' ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                      <button 
+                        onClick={() => handleEdit(category)}
+                        className="p-2 text-neutral-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(category.id)}
+                        className="p-2 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredCategories.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="py-8 text-center text-neutral-500 font-medium">
+                    No categories found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

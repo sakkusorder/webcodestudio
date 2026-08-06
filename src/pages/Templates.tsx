@@ -49,12 +49,14 @@ export function Templates() {
           <div className="w-24 h-24 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-8 transform rotate-3">
              <Code2 className="w-12 h-12" />
           </div>
-          <h2 className="text-2xl md:text-3xl font-black text-neutral-900 mb-4 leading-snug">
-            🚀 আমরা এখনও এই ধরনের ওয়েবসাইট তৈরি করার সুযোগ পাইনি।
+          
+<h2 className="text-2xl md:text-3xl font-black text-neutral-900 mb-4 leading-snug">
+            বর্তমানে এই ক্যাটাগরিতে কোনো ওয়েবসাইট উপলব্ধ নেই।
           </h2>
           <p className="text-lg text-neutral-600 mb-10 leading-relaxed max-w-2xl mx-auto">
-            আপনি যদি এই ধরনের একটি ওয়েবসাইট তৈরি করতে চান, তাহলে আমাদের সাথে যোগাযোগ করুন। আমরা আপনার চাহিদা অনুযায়ী সম্পূর্ণ কাস্টম ওয়েবসাইট তৈরি করে দিতে প্রস্তুত।
+            আপনি চাইলে আমাদের সাথে যোগাযোগ করে আপনার চাহিদা অনুযায়ী সম্পূর্ণ কাস্টম ওয়েবসাইট তৈরি করাতে পারেন।
           </p>
+
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
             <a href="https://wa.me/1234567890" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 bg-[#25D366] text-white px-4 py-4 rounded-xl font-bold hover:bg-[#20bd5a] transition-all hover:-translate-y-1 shadow-sm">
