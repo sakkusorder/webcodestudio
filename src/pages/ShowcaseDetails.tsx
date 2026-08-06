@@ -174,7 +174,7 @@ export function ShowcaseDetails() {
                   "w-[375px] rounded-[3rem] aspect-[9/19] border-8 border-neutral-800"
                 )}>
                   <img 
-                    src={template.gallery[activeGalleryIndex]} 
+                    src={(template.gallery && template.gallery.length > 0) ? template.gallery[activeGalleryIndex] : (template.coverImage || template.image)} 
                     alt="Template Preview" 
                     className="w-full h-full object-cover object-top"
                   />

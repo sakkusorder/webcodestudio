@@ -12,9 +12,20 @@ export function Showcase() {
   const [selectedTechnology, setSelectedTechnology] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState<'All' | 'Live' | 'Demo'>('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [templates, setTemplates] = useState(getStoredTemplates());
+
+  useEffect(() => {
+    const handleStorage = () => setTemplates(getStoredTemplates());
+    window.addEventListener('storage', handleStorage);
+    const interval = setInterval(handleStorage, 1000);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
 
   const filteredTemplates = useMemo(() => {
-    return getStoredTemplates().filter(template => {
+    return templates.filter(template => {
       const matchesSearch = template.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             template.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'All' || template.category === selectedCategory;
@@ -22,9 +33,9 @@ export function Showcase() {
       const matchesStatus = selectedStatus === 'All' || template.status === selectedStatus;
       
       // Don't show hidden items in public view
-      const isPublic = template.visibility === 'Public';
+      const isActive = !template.adminStatus || template.adminStatus === 'Active';
 
-      return matchesSearch && matchesCategory && matchesTech && matchesStatus && isPublic;
+      return matchesSearch && matchesCategory && matchesTech && matchesStatus && isActive;
     });
   }, [searchQuery, selectedCategory, selectedTechnology, selectedStatus]);
 

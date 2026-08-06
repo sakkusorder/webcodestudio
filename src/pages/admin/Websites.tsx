@@ -83,7 +83,7 @@ export function Websites() {
         id: `wcs-${Date.now()}`,
         lastUpdated: new Date().toISOString(),
         status: 'Live', // User panel status
-        gallery: [],
+        gallery: formData.coverImage ? [formData.coverImage] : [],
         totalOrders: 0
       };
       setWebsites([newWebsite, ...websites]);

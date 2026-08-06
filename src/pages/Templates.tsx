@@ -26,8 +26,11 @@ export function Templates() {
   }, []);
 
   const filteredTemplates = useMemo(() => {
-    if (!activeCategory) return templates;
-    return templates.filter(template => template.category === activeCategory);
+    return templates.filter(template => {
+      const isActive = !template.adminStatus || template.adminStatus === 'Active';
+      const matchesCategory = !activeCategory || template.category === activeCategory;
+      return isActive && matchesCategory;
+    });
   }, [activeCategory, templates]);
 
 
@@ -79,7 +82,7 @@ export function Templates() {
             <div key={template.id} className="group bg-white rounded-xl md:rounded-2xl overflow-hidden border border-neutral-200 hover:shadow-xl transition-all duration-300 flex flex-col">
               <div className="aspect-[4/3] md:aspect-[3/2] overflow-hidden relative">
                 <img 
-                  src={template.image} 
+                  src={template.coverImage || template.image} 
                   alt={template.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
