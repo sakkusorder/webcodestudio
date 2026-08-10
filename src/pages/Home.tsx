@@ -1,4 +1,4 @@
-import { getStoredTemplates } from '../data/templates';
+import { getStoredTemplates, fetchTemplates } from '../data/templates';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
   ArrowRight, Code2, Settings, Zap, ArrowLeft, Laptop, 
@@ -40,7 +40,7 @@ export function Home() {
   const [templates, setTemplates] = useState(getStoredTemplates());
   
   useEffect(() => {
-    const handleStorage = () => setTemplates(getStoredTemplates());
+    fetchTemplates().then(data => { if (data && data.length > 0) setTemplates(data); }); const handleStorage = () => setTemplates(getStoredTemplates());
     window.addEventListener('storage', handleStorage);
     const interval = setInterval(handleStorage, 1000);
     return () => {

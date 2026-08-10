@@ -3,7 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { ExternalLink, ShoppingCart, Search, LayoutGrid, List, Filter, Star, CheckCircle2, PlayCircle, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
-import { getStoredTemplates, CATEGORIES, TECHNOLOGIES } from '../data/templates';
+import { getStoredTemplates, fetchTemplates, CATEGORIES, TECHNOLOGIES } from '../data/templates';
 
 export function Showcase() {
   const { t } = useLanguage();
@@ -15,7 +15,7 @@ export function Showcase() {
   const [templates, setTemplates] = useState(getStoredTemplates());
 
   useEffect(() => {
-    const handleStorage = () => setTemplates(getStoredTemplates());
+    fetchTemplates().then(data => { if (data && data.length > 0) setTemplates(data); }); const handleStorage = () => setTemplates(getStoredTemplates());
     window.addEventListener('storage', handleStorage);
     const interval = setInterval(handleStorage, 1000);
     return () => {
@@ -194,7 +194,7 @@ export function Showcase() {
             {/* Grid View */}
             {viewMode === 'grid' && (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredTemplates.map(template => (
+                {templates.filter(template => { const matchesSearch = template.title.toLowerCase().includes(searchQuery.toLowerCase()) || template.description.toLowerCase().includes(searchQuery.toLowerCase()); const matchesCategory = selectedCategory === "All" || template.category === selectedCategory; const matchesTech = selectedTechnology === "All" || template.technology.includes(selectedTechnology); const matchesStatus = selectedStatus === "All" || template.status === selectedStatus; const isActive = !template.adminStatus || template.adminStatus === "Active"; return matchesSearch && matchesCategory && matchesTech && matchesStatus && isActive; }).map(template => (
                   <div key={template.id} className="group bg-white rounded-3xl overflow-hidden border border-neutral-200 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 flex flex-col">
                     <div className="aspect-[16/10] overflow-hidden relative bg-neutral-100">
                       <img 
@@ -270,7 +270,7 @@ export function Showcase() {
             {/* List View */}
             {viewMode === 'list' && (
               <div className="space-y-4">
-                {filteredTemplates.map(template => (
+                {templates.filter(template => { const matchesSearch = template.title.toLowerCase().includes(searchQuery.toLowerCase()) || template.description.toLowerCase().includes(searchQuery.toLowerCase()); const matchesCategory = selectedCategory === "All" || template.category === selectedCategory; const matchesTech = selectedTechnology === "All" || template.technology.includes(selectedTechnology); const matchesStatus = selectedStatus === "All" || template.status === selectedStatus; const isActive = !template.adminStatus || template.adminStatus === "Active"; return matchesSearch && matchesCategory && matchesTech && matchesStatus && isActive; }).map(template => (
                   <div key={template.id} className="group bg-white rounded-3xl overflow-hidden border border-neutral-200 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 flex flex-col md:flex-row">
                     <div className="w-full md:w-64 aspect-[16/10] md:aspect-auto md:h-full relative overflow-hidden bg-neutral-100 shrink-0">
                       <img 

@@ -82,6 +82,59 @@ export interface CategoryInfo {
   status: 'Active' | 'Inactive';
 }
 
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
+
+export const fetchTemplates = async (): Promise<Template[]> => {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase.from('templates').select('*');
+      if (error) {
+        console.warn('Supabase fetch warning (table may not exist):', error.message);
+        return getStoredTemplates(); // Fallback
+      }
+      if (data) {
+        localStorage.setItem('wcs_templates', JSON.stringify(data));
+        return data as Template[];
+      }
+    } catch (err) {
+      console.warn(err);
+    }
+  }
+  return getStoredTemplates();
+};
+
+export const saveTemplate = async (template: Template) => {
+  if (isSupabaseConfigured) {
+    try {
+      const { error } = await supabase.from('templates').upsert(template);
+      if (error) console.warn('Supabase save warning:', error.message);
+    } catch (err) {
+      console.warn(err);
+    }
+  }
+  const current = getStoredTemplates();
+  const existingIndex = current.findIndex(t => t.id === template.id);
+  if (existingIndex >= 0) {
+    current[existingIndex] = template;
+  } else {
+    current.push(template);
+  }
+  localStorage.setItem('wcs_templates', JSON.stringify(current));
+};
+
+export const deleteTemplate = async (id: string) => {
+  if (isSupabaseConfigured) {
+    try {
+      const { error } = await supabase.from('templates').delete().eq('id', id);
+      if (error) console.warn('Supabase delete warning:', error.message);
+    } catch (err) {
+      console.warn(err);
+    }
+  }
+  const current = getStoredTemplates().filter(t => t.id !== id);
+  localStorage.setItem('wcs_templates', JSON.stringify(current));
+};
+
 export const getStoredCategories = (): CategoryInfo[] => {
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem('wcs_categories');

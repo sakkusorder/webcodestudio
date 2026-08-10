@@ -1,7 +1,7 @@
 import { useLanguage } from '../contexts/LanguageContext';
 import { ExternalLink, ShoppingCart, Code2, MessageCircle, Mail, HeadphonesIcon } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { getStoredTemplates } from '../data/templates';
+import { getStoredTemplates, fetchTemplates } from '../data/templates';
 import { useMemo, useEffect, useState } from 'react';
 
 export function Templates() {
@@ -15,7 +15,7 @@ export function Templates() {
   const [templates, setTemplates] = useState(getStoredTemplates());
   
   useEffect(() => {
-    const handleStorage = () => setTemplates(getStoredTemplates());
+    fetchTemplates().then(data => { if (data && data.length > 0) setTemplates(data); }); const handleStorage = () => setTemplates(getStoredTemplates());
     window.addEventListener('storage', handleStorage);
     // Also poll just in case it's same window
     const interval = setInterval(handleStorage, 1000);
@@ -78,7 +78,7 @@ export function Templates() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
-          {filteredTemplates.map(template => (
+          {templates.filter(template => { const isActive = !template.adminStatus || template.adminStatus === "Active"; const matchesCategory = !activeCategory || template.category === activeCategory; return isActive && matchesCategory; }).map(template => (
             <div key={template.id} className="group bg-white rounded-xl md:rounded-2xl overflow-hidden border border-neutral-200 hover:shadow-xl transition-all duration-300 flex flex-col">
               <div className="aspect-[4/3] md:aspect-[3/2] overflow-hidden relative">
                 <img 

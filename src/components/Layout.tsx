@@ -2,7 +2,8 @@ import { ReactNode, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { Globe, Menu, Search, UserPlus, LogIn, X, LogOut, LayoutDashboard, Package, History, Bell, HelpCircle, ChevronRight } from 'lucide-react';
+import { Globe, Menu, Search, UserPlus, LogIn, X, LogOut, LayoutDashboard, Package, History, Bell, HelpCircle, ChevronRight, ChevronDown } from 'lucide-react';
+import { CATEGORIES } from '../data/templates';
 
 export function Layout({ children }: { children: ReactNode }) {
   const { language, setLanguage, t } = useLanguage();
@@ -210,10 +211,23 @@ export function Layout({ children }: { children: ReactNode }) {
             </div>
 
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-              <Link to="/templates" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-4 py-3.5 text-neutral-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl font-semibold transition-colors">
-                <Globe className="w-5 h-5" />
-                ওয়েবসাইট দেখুন
-              </Link>
+              <button onClick={() => { 
+                setSidebarOpen(false); 
+                if (location.pathname !== '/') {
+                  navigate('/');
+                  setTimeout(() => {
+                    document.getElementById('categories-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 300);
+                } else {
+                  document.getElementById('categories-section')?.scrollIntoView({ behavior: 'smooth' });
+                }
+              }} className="w-full flex items-center justify-between px-4 py-3.5 text-neutral-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl font-semibold transition-colors group">
+                <div className="flex items-center gap-3">
+                  <Globe className="w-5 h-5" />
+                  ওয়েবসাইট দেখুন
+                </div>
+                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
               <Link to="/dashboard?tab=orders" onClick={() => setSidebarOpen(false)} className="flex items-center justify-between px-4 py-3.5 text-neutral-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl font-semibold transition-colors group">
                 <div className="flex items-center gap-3">
                   <Package className="w-5 h-5" />

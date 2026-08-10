@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Search, Edit, Trash2, Eye, EyeOff, Copy, FileText, Image as ImageIcon, CheckCircle, UploadCloud, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { Template, getStoredTemplates, getStoredCategories, CategoryInfo } from '../../data/templates';
+import { Template, getStoredTemplates, fetchTemplates, saveTemplate, deleteTemplate, getStoredCategories, CategoryInfo } from '../../data/templates';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export function Websites() {
@@ -12,6 +12,9 @@ export function Websites() {
   useEffect(() => {
     setWebsitesState(getStoredTemplates());
     setCategories(getStoredCategories());
+    fetchTemplates().then(data => {
+      if (data && data.length > 0) setWebsitesState(data);
+    });
   }, []);
 
   const setWebsites = (newWebsites: Template[] | ((prev: Template[]) => Template[])) => {
@@ -50,20 +53,27 @@ export function Websites() {
 
   const [formData, setFormData] = useState<Partial<Template>>(initialFormState);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this website?')) {
+      await deleteTemplate(id);
       setWebsites(websites.filter(w => w.id !== id));
     }
   };
 
-  const toggleStatus = (id: string, currentStatus: string = 'Active') => {
+  const toggleStatus = async (id: string, currentStatus: string = 'Active') => {
     const newStatus = currentStatus === 'Active' ? 'Hidden' : 'Active';
-    setWebsites(websites.map(w => w.id === id ? { ...w, adminStatus: newStatus as any } : w));
+    const target = websites.find(w => w.id === id);
+    if (target) {
+       const updatedTarget = { ...target, adminStatus: newStatus as any };
+       await saveTemplate(updatedTarget);
+       setWebsites(websites.map(w => w.id === id ? updatedTarget : w));
+    }
   };
 
-  const handleDuplicate = (website: Template) => {
+  const handleDuplicate = async (website: Template) => {
     if (confirm('Duplicate this website?')) {
       const copy = { ...website, id: `wcs-${Date.now()}`, title: `${website.title} (Copy)` };
+      await saveTemplate(copy);
       setWebsites([copy, ...websites]);
     }
   };
@@ -73,10 +83,15 @@ export function Websites() {
     alert('Website ID Copied: ' + id);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
-      setWebsites(websites.map(w => w.id === editingId ? { ...w, ...formData } as Template : w));
+      const target = websites.find(w => w.id === editingId);
+      if (target) {
+         const updatedTarget = { ...target, ...formData } as Template;
+         await saveTemplate(updatedTarget);
+         setWebsites(websites.map(w => w.id === editingId ? updatedTarget : w));
+      }
     } else {
       const newWebsite: Template = {
         ...(formData as Template),
@@ -86,6 +101,7 @@ export function Websites() {
         gallery: formData.coverImage ? [formData.coverImage] : [],
         totalOrders: 0
       };
+      await saveTemplate(newWebsite);
       setWebsites([newWebsite, ...websites]);
     }
     alert(`Website ${editingId ? 'updated' : 'uploaded'} successfully!`);

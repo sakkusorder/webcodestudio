@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getStoredTemplates } from '../data/templates';
+import { getStoredTemplates, fetchTemplates } from '../data/templates';
 import { CreditCard, Wallet, FileText, CheckCircle, ArrowLeft, Smartphone } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { v4 as uuidv4 } from 'uuid';
@@ -43,6 +43,13 @@ export default function Checkout() {
     } else {
       navigate('/');
     }
+
+    fetchTemplates().then(data => {
+      const dbFound = data.find(t => t.id === id);
+      if (dbFound) {
+        setProduct(dbFound);
+      }
+    });
   }, [id, navigate]);
 
   if (!product) return null;
