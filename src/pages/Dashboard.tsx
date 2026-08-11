@@ -4,10 +4,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
 Globe, Package, History, Bell, HelpCircle, ChevronRight, CheckCircle2,
 AlertCircle, MessageCircle, ArrowLeft, Upload, X, ShoppingBag, User, Camera, Save, Loader2
+, Download
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { supabase } from '../utils/supabase';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 // Mock Data
 const MOCK_ORDERS: any[] = [];
@@ -606,14 +609,12 @@ Locked
                               </span>
                             </td>
                             <td className="p-4 md:p-6">
-                              {(payment.status === 'Success' || payment.status === 'Approved') && (
                                 <button 
                                   onClick={() => downloadInvoice(payment)}
                                   className="px-3 py-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors font-semibold text-xs flex items-center gap-2 whitespace-nowrap"
                                 >
                                   <Download className="w-4 h-4" /> PDF
                                 </button>
-                              )}
                             </td>
                           </tr>
                         ))}
