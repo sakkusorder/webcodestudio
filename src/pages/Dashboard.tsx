@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '../lib/utils';
+import { supabase } from '../utils/supabase';
 
 // Mock Data
 const MOCK_ORDERS: any[] = [];
@@ -31,6 +32,47 @@ export function Dashboard() {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileError, setProfileError] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Handle Avatar Upload
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploadingAvatar(true);
+      setProfileError('');
+      setProfileSuccess('');
+      
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('Image size must be less than 10MB');
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user?.id}-${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        if (uploadError.message.toLowerCase().includes('bucket')) {
+          throw new Error('Storage error: Please ensure the "avatars" public bucket exists in Supabase Storage.');
+        }
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      
+      setProfileData({ ...profileData, avatarUrl: data.publicUrl });
+      setProfileSuccess('Image uploaded! Click "Save Profile Details" to apply.');
+    } catch (err: any) {
+      setProfileError(err.message || 'Error uploading image');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   // Handle Profile Update
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -386,7 +428,9 @@ export function Dashboard() {
                   <div className="flex flex-col items-center mb-8">
                     <div className="relative group cursor-pointer mb-4">
                       <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-neutral-50 shadow-md bg-indigo-50 flex items-center justify-center">
-                        {profileData.avatarUrl ? (
+                        {uploadingAvatar ? (
+                          <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                        ) : profileData.avatarUrl ? (
                           <img src={profileData.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
                           <User className="w-12 h-12 text-indigo-300" />
@@ -396,21 +440,19 @@ export function Dashboard() {
                         <Camera className="w-8 h-8 text-white" />
                       </div>
                       <input 
-                        type="url" 
-                        placeholder="Image URL (optional)"
-                        className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
-                        title="You can also paste an image URL below"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        disabled={uploadingAvatar}
+                        className="opacity-0 absolute inset-0 w-full h-full cursor-pointer disabled:cursor-not-allowed"
+                        title="Upload profile picture"
                       />
                     </div>
-                    <div className="w-full">
-                      <label className="block text-sm font-semibold text-neutral-700 mb-2 text-center">Profile Image URL</label>
-                      <input 
-                        type="url"
-                        value={profileData.avatarUrl}
-                        onChange={(e) => setProfileData({...profileData, avatarUrl: e.target.value})}
-                        placeholder="https://example.com/avatar.jpg"
-                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-neutral-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none text-center"
-                      />
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-neutral-600">
+                        {uploadingAvatar ? 'Uploading...' : 'Click image to upload'}
+                      </p>
+                      <p className="text-xs text-neutral-500 mt-1">Max size: 10MB</p>
                     </div>
                   </div>
 
