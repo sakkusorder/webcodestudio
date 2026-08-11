@@ -2,7 +2,7 @@ import { ReactNode, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { Globe, Menu, Search, UserPlus, LogIn, X, LogOut, LayoutDashboard, Package, History, Bell, HelpCircle, ChevronRight, ChevronDown } from 'lucide-react';
+import { Globe, Menu, Search, UserPlus, LogIn, X, LogOut, LayoutDashboard, Package, History, Bell, HelpCircle, ChevronRight, ChevronDown, User } from 'lucide-react';
 import { CATEGORIES } from '../data/templates';
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -92,10 +92,14 @@ export function Layout({ children }: { children: ReactNode }) {
                 {isAuthenticated ? (
                   <div className="flex items-center gap-4">
                     <div 
-                      className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-black text-lg cursor-pointer hover:bg-indigo-200 transition-colors"
+                      className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-black text-lg cursor-pointer hover:bg-indigo-200 transition-colors overflow-hidden"
                       onClick={() => setSidebarOpen(true)}
                     >
-                      {user?.name?.charAt(0) || 'U'}
+                      {user?.user_metadata?.avatar_url ? (
+                        <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        (user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U').toUpperCase()
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -197,15 +201,19 @@ export function Layout({ children }: { children: ReactNode }) {
           <div className={`fixed top-0 left-0 bottom-0 w-[280px] bg-white z-[70] shadow-2xl transition-transform duration-300 flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center font-black text-lg">
-                  {user?.name?.charAt(0) || 'U'}
+                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center font-black text-lg overflow-hidden shrink-0">
+                  {user?.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    (user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U').toUpperCase()
+                  )}
                 </div>
-                <div>
-                  <div className="font-bold text-neutral-900 text-sm">{user?.name || 'Customer'}</div>
+                <div className="min-w-0">
+                  <div className="font-bold text-neutral-900 text-sm truncate">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Customer'}</div>
                   <div className="text-xs font-semibold text-neutral-500">Premium Member</div>
                 </div>
               </div>
-              <button onClick={() => setSidebarOpen(false)} className="p-2 text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100 rounded-full transition-colors">
+              <button onClick={() => setSidebarOpen(false)} className="p-2 text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100 rounded-full transition-colors shrink-0">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -246,6 +254,13 @@ export function Layout({ children }: { children: ReactNode }) {
                 <div className="flex items-center gap-3">
                   <Bell className="w-5 h-5" />
                   নোটিফিকেশন
+                </div>
+                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
+              <Link to="/dashboard?tab=profile" onClick={() => setSidebarOpen(false)} className="flex items-center justify-between px-4 py-3.5 text-neutral-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl font-semibold transition-colors group">
+                <div className="flex items-center gap-3">
+                  <User className="w-5 h-5" />
+                  প্রোফাইল সেটিংস
                 </div>
                 <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>

@@ -14,6 +14,7 @@ interface AuthContextType {
   sendPasswordReset: (email: string) => Promise<{ data: any; error: AuthError | null }>;
   updatePassword: (password: string) => Promise<{ data: any; error: AuthError | null }>;
   updateEmail: (email: string) => Promise<{ data: any; error: AuthError | null }>;
+  updateProfile: (data: { full_name?: string; phone_number?: string; avatar_url?: string }) => Promise<{ data: any; error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
 }
 
@@ -126,6 +127,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return supabase.auth.updateUser({ email });
   };
 
+  const updateProfile = async (data: { full_name?: string; phone_number?: string; avatar_url?: string }) => {
+    const configError = checkConfig();
+    if (configError) return configError;
+    return supabase.auth.updateUser({ data });
+  };
+
   const signOut = async () => {
     const configError = checkConfig();
     if (configError) return configError;
@@ -144,6 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sendPasswordReset,
     updatePassword,
     updateEmail,
+    updateProfile,
     signOut,
   };
 

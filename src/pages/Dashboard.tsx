@@ -3,85 +3,59 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Globe, Package, History, Bell, HelpCircle, ChevronRight, CheckCircle2,
-  AlertCircle, MessageCircle, ArrowLeft, Upload, X, ShoppingBag
+  AlertCircle, MessageCircle, ArrowLeft, Upload, X, ShoppingBag, User, Camera, Save, Loader2
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '../lib/utils';
 
 // Mock Data
-const MOCK_ORDERS = [
-  {
-    id: 'ORD-8924',
-    websiteName: 'Restaurant Management System',
-    category: 'Business Website',
-    orderStatus: 'Down Payment Pending Verification',
-    projectStatus: 'Waiting for Payment Approval',
-    deliveryStatus: 'Not Started',
-    totalPrice: 20000,
-    downPayment: 5000,
-    totalPaid: 0,
-    remainingAmount: 17000, // 20000 + 2000 (10%) = 22000 - 5000 = 17000
-    isInstallment: true,
-    installments: [
-      { id: 'INS-10', number: 1, amount: 2833, status: 'Locked' },
-      { id: 'INS-11', number: 2, amount: 2833, status: 'Locked' },
-    ]
-  },
-  {
-    id: 'ORD-8923',
-    websiteName: 'My E-Commerce Store',
-    category: 'E-commerce',
-    orderStatus: 'Confirmed',
-    projectStatus: 'Development Phase',
-    deliveryStatus: 'Expected in 12 days',
-    totalPrice: 15000,
-    downPayment: 3000,
-    totalPaid: 3000,
-    remainingAmount: 13500, // Includes 10% charge
-    isInstallment: true,
-    installments: [
-      { id: 'INS-1', number: 1, amount: 2250, status: 'Success' },
-      { id: 'INS-2', number: 2, amount: 2250, status: 'Pending Verification' },
-      { id: 'INS-3', number: 3, amount: 2250, status: 'Rejected' },
-      { id: 'INS-4', number: 4, amount: 2250, status: 'Locked' },
-      { id: 'INS-5', number: 5, amount: 2250, status: 'Locked' },
-      { id: 'INS-6', number: 6, amount: 2250, status: 'Locked' },
-    ]
-  },
-  {
-    id: 'ORD-7612',
-    websiteName: 'Corporate Portfolio',
-    category: 'Portfolio',
-    orderStatus: 'Completed',
-    projectStatus: 'Delivered',
-    deliveryStatus: 'Delivered',
-    totalPrice: 8000,
-    downPayment: 8000,
-    totalPaid: 8000,
-    remainingAmount: 0,
-    isInstallment: false,
-    installments: []
-  }
-];
+const MOCK_ORDERS: any[] = [];
 
-const MOCK_PAYMENTS = [
-  { id: 'TXN-9823', date: '2026-08-01', amount: 3000, trxId: '8JD6K8G3K', status: 'Success' },
-  { id: 'TXN-7612', date: '2026-05-30', amount: 2250, trxId: '9KL2M4N5P', status: 'Pending Verification' },
-  { id: 'TXN-7544', date: '2026-05-15', amount: 8000, trxId: '7GH3J6K1L', status: 'Success' },
-];
+const MOCK_PAYMENTS: any[] = [];
 
-const MOCK_NOTIFICATIONS = [
-  { id: 1, title: 'Payment Accepted', message: 'Your payment of ৳3,000 has been accepted.', time: '2 hours ago', read: false },
-  { id: 2, title: 'Website Development Progress', message: 'Development on My E-Commerce Store has begun.', time: '1 day ago', read: true },
-  { id: 3, title: 'Next Installment Reminder', message: 'Your next installment of ৳2,250 is due soon.', time: '2 days ago', read: true },
-  { id: 4, title: 'Website Delivery Completed', message: 'Corporate Portfolio has been delivered successfully.', time: '1 month ago', read: true },
-];
+const MOCK_NOTIFICATIONS: any[] = [];
 
 export function Dashboard() {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'orders';
+  const isNewUser = searchParams.get('new') === 'true';
+  
+  // Profile State
+  const [profileData, setProfileData] = useState({
+    fullName: user?.user_metadata?.full_name || '',
+    phoneNumber: user?.user_metadata?.phone_number || '',
+    avatarUrl: user?.user_metadata?.avatar_url || ''
+  });
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [profileError, setProfileError] = useState('');
+
+  // Handle Profile Update
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileLoading(true);
+    setProfileSuccess('');
+    setProfileError('');
+    try {
+      const { error } = await updateProfile({
+        full_name: profileData.fullName,
+        phone_number: profileData.phoneNumber,
+        avatar_url: profileData.avatarUrl
+      });
+      if (error) throw error;
+      setProfileSuccess('Profile updated successfully!');
+      if (isNewUser) {
+        // Remove the 'new' flag after setup
+        setSearchParams({ tab: 'profile' });
+      }
+    } catch (err: any) {
+      setProfileError(err.message || 'Failed to update profile');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
   
   const [activeOrder, setActiveOrder] = useState<any>(null);
   const [orders, setOrders] = useState(MOCK_ORDERS);
@@ -283,38 +257,48 @@ export function Dashboard() {
                 <p className="text-sm md:text-base text-neutral-600 font-medium">আপনার সকল পেমেন্টের তালিকা।</p>
               </div>
 
-              <div className="bg-white rounded-2xl md:rounded-3xl border border-neutral-200 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-neutral-50 border-b border-neutral-100">
-                        <th className="p-4 md:p-6 text-sm font-bold text-neutral-600">Date</th>
-                        <th className="p-4 md:p-6 text-sm font-bold text-neutral-600">Amount</th>
-                        <th className="p-4 md:p-6 text-sm font-bold text-neutral-600">Transaction ID</th>
-                        <th className="p-4 md:p-6 text-sm font-bold text-neutral-600">Payment Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-neutral-100">
-                      {MOCK_PAYMENTS.map((payment) => (
-                        <tr key={payment.id} className="hover:bg-neutral-50 transition-colors">
-                          <td className="p-4 md:p-6 font-medium text-neutral-900 text-sm">{payment.date}</td>
-                          <td className="p-4 md:p-6 font-black text-neutral-900 text-sm">৳{payment.amount}</td>
-                          <td className="p-4 md:p-6 text-neutral-500 font-mono text-xs bg-neutral-50/50">{payment.trxId}</td>
-                          <td className="p-4 md:p-6">
-                            <span className={cn(
-                              "px-3 py-1 rounded-full text-xs font-bold",
-                              payment.status === 'Success' ? 'bg-emerald-100 text-emerald-700' : 
-                              payment.status === 'Pending Verification' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
-                            )}>
-                              {payment.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {MOCK_PAYMENTS.length === 0 ? (
+                <div className="bg-white rounded-3xl p-10 md:p-16 border border-neutral-200 shadow-sm text-center flex flex-col items-center">
+                  <div className="w-24 h-24 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-6">
+                    <History className="w-12 h-12" />
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-black text-neutral-900 mb-3">কোনো পেমেন্ট হিস্টরি নেই</h3>
+                  <p className="text-neutral-500 font-medium max-w-md">আপনি এখনো কোনো পেমেন্ট করেননি।</p>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-white rounded-2xl md:rounded-3xl border border-neutral-200 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-neutral-50 border-b border-neutral-100">
+                          <th className="p-4 md:p-6 text-sm font-bold text-neutral-600">Date</th>
+                          <th className="p-4 md:p-6 text-sm font-bold text-neutral-600">Amount</th>
+                          <th className="p-4 md:p-6 text-sm font-bold text-neutral-600">Transaction ID</th>
+                          <th className="p-4 md:p-6 text-sm font-bold text-neutral-600">Payment Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-100">
+                        {MOCK_PAYMENTS.map((payment) => (
+                          <tr key={payment.id} className="hover:bg-neutral-50 transition-colors">
+                            <td className="p-4 md:p-6 font-medium text-neutral-900 text-sm">{payment.date}</td>
+                            <td className="p-4 md:p-6 font-black text-neutral-900 text-sm">৳{payment.amount}</td>
+                            <td className="p-4 md:p-6 text-neutral-500 font-mono text-xs bg-neutral-50/50">{payment.trxId}</td>
+                            <td className="p-4 md:p-6">
+                              <span className={cn(
+                                "px-3 py-1 rounded-full text-xs font-bold",
+                                payment.status === 'Success' ? 'bg-emerald-100 text-emerald-700' : 
+                                payment.status === 'Pending Verification' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
+                              )}>
+                                {payment.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -326,22 +310,32 @@ export function Dashboard() {
                 <p className="text-sm md:text-base text-neutral-600 font-medium">আপনার একাউন্টের আপডেটসমূহ।</p>
               </div>
 
-              <div className="space-y-3 md:space-y-4">
-                {MOCK_NOTIFICATIONS.map(notification => (
-                  <div key={notification.id} className={cn("bg-white p-4 md:p-5 rounded-2xl border flex gap-4 md:gap-5 transition-colors", notification.read ? "border-neutral-100" : "border-indigo-200 shadow-sm bg-indigo-50/30")}>
-                    <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0", notification.read ? "bg-neutral-100 text-neutral-500" : "bg-indigo-600 text-white shadow-md shadow-indigo-200")}>
-                      <Bell className="w-5 h-5 md:w-6 md:h-6" />
-                    </div>
-                    <div className="flex-1 min-w-0 pt-1">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2 mb-1">
-                        <h4 className={cn("font-bold text-sm md:text-base", notification.read ? "text-neutral-700" : "text-neutral-900")}>{notification.title}</h4>
-                        <span className="text-xs font-semibold text-neutral-400 whitespace-nowrap">{notification.time}</span>
-                      </div>
-                      <p className="text-neutral-600 text-sm leading-relaxed">{notification.message}</p>
-                    </div>
+              {MOCK_NOTIFICATIONS.length === 0 ? (
+                <div className="bg-white rounded-3xl p-10 md:p-16 border border-neutral-200 shadow-sm text-center flex flex-col items-center">
+                  <div className="w-24 h-24 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-6">
+                    <Bell className="w-12 h-12" />
                   </div>
-                ))}
-              </div>
+                  <h3 className="text-xl md:text-2xl font-black text-neutral-900 mb-3">কোনো নোটিফিকেশন নেই</h3>
+                  <p className="text-neutral-500 font-medium max-w-md">আপনার একাউন্টে বর্তমানে কোনো নতুন আপডেট বা নোটিফিকেশন নেই।</p>
+                </div>
+              ) : (
+                <div className="space-y-3 md:space-y-4">
+                  {MOCK_NOTIFICATIONS.map(notification => (
+                    <div key={notification.id} className={cn("bg-white p-4 md:p-5 rounded-2xl border flex gap-4 md:gap-5 transition-colors", notification.read ? "border-neutral-100" : "border-indigo-200 shadow-sm bg-indigo-50/30")}>
+                      <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0", notification.read ? "bg-neutral-100 text-neutral-500" : "bg-indigo-600 text-white shadow-md shadow-indigo-200")}>
+                        <Bell className="w-5 h-5 md:w-6 md:h-6" />
+                      </div>
+                      <div className="flex-1 min-w-0 pt-1">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2 mb-1">
+                          <h4 className={cn("font-bold text-sm md:text-base", notification.read ? "text-neutral-700" : "text-neutral-900")}>{notification.title}</h4>
+                          <span className="text-xs font-semibold text-neutral-400 whitespace-nowrap">{notification.time}</span>
+                        </div>
+                        <p className="text-neutral-600 text-sm leading-relaxed">{notification.message}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -368,6 +362,115 @@ export function Dashboard() {
                   <MessageCircle className="w-6 h-6" />
                   WhatsApp Support
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* PROFILE TAB */}
+          {activeTab === 'profile' && (
+            <div className="animate-in fade-in zoom-in-95 duration-300">
+              <div className="mb-6 md:mb-10">
+                <h2 className="text-2xl md:text-3xl font-black text-neutral-900 mb-2">প্রোফাইল সেটিংস</h2>
+                <p className="text-sm md:text-base text-neutral-600 font-medium">আপনার ব্যক্তিগত তথ্য আপডেট করুন।</p>
+              </div>
+
+              <div className="bg-white rounded-2xl md:rounded-3xl border border-neutral-200 shadow-sm p-6 md:p-10 max-w-2xl mx-auto">
+                {isNewUser && (
+                  <div className="mb-8 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-r-xl">
+                    <h3 className="text-indigo-800 font-bold mb-1">Welcome to Web Code Studio!</h3>
+                    <p className="text-indigo-600 text-sm font-medium">Please take a moment to set up your profile details below.</p>
+                  </div>
+                )}
+                <form onSubmit={handleProfileUpdate} className="space-y-6">
+                  {/* Profile Picture */}
+                  <div className="flex flex-col items-center mb-8">
+                    <div className="relative group cursor-pointer mb-4">
+                      <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-neutral-50 shadow-md bg-indigo-50 flex items-center justify-center">
+                        {profileData.avatarUrl ? (
+                          <img src={profileData.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-12 h-12 text-indigo-300" />
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="w-8 h-8 text-white" />
+                      </div>
+                      <input 
+                        type="url" 
+                        placeholder="Image URL (optional)"
+                        className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+                        title="You can also paste an image URL below"
+                      />
+                    </div>
+                    <div className="w-full">
+                      <label className="block text-sm font-semibold text-neutral-700 mb-2 text-center">Profile Image URL</label>
+                      <input 
+                        type="url"
+                        value={profileData.avatarUrl}
+                        onChange={(e) => setProfileData({...profileData, avatarUrl: e.target.value})}
+                        placeholder="https://example.com/avatar.jpg"
+                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-neutral-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none text-center"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Full Name</label>
+                    <input 
+                      type="text"
+                      required
+                      value={profileData.fullName}
+                      onChange={(e) => setProfileData({...profileData, fullName: e.target.value})}
+                      placeholder="e.g. John Doe"
+                      className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Phone Number</label>
+                    <input 
+                      type="tel"
+                      required
+                      value={profileData.phoneNumber}
+                      onChange={(e) => setProfileData({...profileData, phoneNumber: e.target.value})}
+                      placeholder="e.g. +880 1613071344"
+                      className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Email Address (Read-only)</label>
+                    <input 
+                      type="email"
+                      value={user?.email || ''}
+                      readOnly
+                      className="w-full px-4 py-3 bg-neutral-100 border border-neutral-200 rounded-xl text-neutral-500 font-medium outline-none cursor-not-allowed"
+                    />
+                  </div>
+
+                  {profileSuccess && (
+                    <div className="p-4 bg-emerald-50 text-emerald-700 rounded-xl font-bold flex items-center gap-2 border border-emerald-100">
+                      <CheckCircle2 className="w-5 h-5" />
+                      {profileSuccess}
+                    </div>
+                  )}
+
+                  {profileError && (
+                    <div className="p-4 bg-rose-50 text-rose-700 rounded-xl font-bold flex items-center gap-2 border border-rose-100">
+                      <AlertCircle className="w-5 h-5" />
+                      {profileError}
+                    </div>
+                  )}
+
+                  <button 
+                    type="submit"
+                    disabled={profileLoading}
+                    className="w-full bg-indigo-600 text-white font-black py-4 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {profileLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                    {profileLoading ? 'Saving Profile...' : 'Save Profile Details'}
+                  </button>
+                </form>
               </div>
             </div>
           )}

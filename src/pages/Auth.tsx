@@ -126,6 +126,8 @@ export function Auth() {
         if (email === 'webcodestudio10@gmail.com') {
           localStorage.setItem('wcs_admin_access', 'true');
           navigate('/admin', { replace: true });
+        } else if (otpMode === 'signup') {
+          navigate('/dashboard?tab=profile&new=true', { replace: true });
         } else {
           navigate(from, { replace: true });
         }
