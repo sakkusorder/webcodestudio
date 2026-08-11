@@ -10,7 +10,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { supabase } from '../utils/supabase';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 // Mock Data
 const MOCK_ORDERS: any[] = [];
@@ -172,7 +172,7 @@ const [activeOrder, setActiveOrder] = useState<any>(null);
     }
     
     // Table
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 75,
       head: [['Description', 'Transaction ID', 'Amount']],
       body: [
