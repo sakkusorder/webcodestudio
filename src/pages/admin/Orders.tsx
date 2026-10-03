@@ -167,6 +167,70 @@ export function Orders() {
     localStorage.setItem('wcs_installments', JSON.stringify([...existing, newPlan]));
   };
 
+  const updateOrderInDb = (orderId: string, updates: any) => {
+    // Check if it's a template order
+    let tOrders = JSON.parse(localStorage.getItem('wcs_orders') || '[]');
+    const tIndex = tOrders.findIndex((o: any) => o.id === orderId);
+    if(tIndex >= 0) {
+      tOrders[tIndex] = { ...tOrders[tIndex], ...updates };
+      localStorage.setItem('wcs_orders', JSON.stringify(tOrders));
+      return;
+    }
+    // Check if it's a custom order
+    let cOrders = JSON.parse(localStorage.getItem('wcs_custom_orders') || '[]');
+    const cIndex = cOrders.findIndex((o: any) => o.id === orderId);
+    if(cIndex >= 0) {
+      cOrders[cIndex] = { ...cOrders[cIndex], ...updates };
+      localStorage.setItem('wcs_custom_orders', JSON.stringify(cOrders));
+    }
+  };
+
+  const handleUpdateProjectStatus = (status: string) => {
+    if(!confirm('Change project status to ' + status + '?')) return;
+    const updated = orders.map(o => {
+      if (o.id === selectedOrder.id) {
+        return { ...o, projectStatus: status };
+      }
+      return o;
+    });
+    setOrders(updated);
+    setSelectedOrder({ ...selectedOrder, projectStatus: status });
+    updateOrderInDb(selectedOrder.id, { projectStatus: status });
+  };
+
+  const handleApproveInstallment = (installmentId: string) => {
+    if(!confirm('Approve this installment payment?')) return;
+    const updated = orders.map(o => {
+      if (o.id === selectedOrder.id && o.installments) {
+        return { 
+          ...o, 
+          installments: o.installments.map((i: any) => i.id === installmentId ? { ...i, status: 'Paid', paidDate: new Date().toISOString() } : i)
+        };
+      }
+      return o;
+    });
+    setOrders(updated);
+    const updatedOrder = updated.find(o => o.id === selectedOrder.id);
+    setSelectedOrder(updatedOrder);
+    updateOrderInDb(selectedOrder.id, { installments: updatedOrder.installments });
+    alert('Installment payment approved!');
+  };
+
+  const handleUnlockInstallment = () => {
+    if(!confirm('Unlock Installments for this order?')) return;
+    const unlockDate = new Date().toISOString();
+    const updated = orders.map(o => {
+      if (o.id === selectedOrder.id) {
+        return { ...o, isInstallmentUnlocked: true, installmentStartDate: unlockDate };
+      }
+      return o;
+    });
+    setOrders(updated);
+    setSelectedOrder({ ...selectedOrder, isInstallmentUnlocked: true, installmentStartDate: unlockDate });
+    updateOrderInDb(selectedOrder.id, { isInstallmentUnlocked: true, installmentStartDate: unlockDate });
+    alert('Installments Unlocked Successfully!');
+  };
+
   const handleCopyId = (id: string) => {
     navigator.clipboard.writeText(id);
     alert('Order ID Copied: ' + id);
@@ -302,6 +366,56 @@ export function Orders() {
           </div>
 
           <div className="space-y-6">
+            {/* Project Management */}
+            <div className="bg-white rounded-3xl p-6 border border-neutral-100 shadow-sm">
+              <h3 className="text-lg font-bold text-neutral-900 mb-6 flex items-center gap-2">
+                <Activity className="w-5 h-5 text-indigo-600" />
+                Project Management
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs text-neutral-500 font-bold uppercase mb-2">Project Status</div>
+                  <select 
+                    value={selectedOrder.projectStatus || 'Not Started'}
+                    onChange={(e) => handleUpdateProjectStatus(e.target.value)}
+                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600/20 font-bold text-neutral-700"
+                  >
+                    <option value="Not Started">Not Started</option>
+                    <option value="Requirement Gathering">Requirement Gathering</option>
+                    <option value="Design">Design</option>
+                    <option value="Development">Development</option>
+                    <option value="Testing">Testing</option>
+                    <option value="Delivered">Delivered</option>
+                  </select>
+                </div>
+
+                {(selectedOrder.payment?.option === 'installment' || selectedOrder.payment?.option?.startsWith('emi')) && (
+                  <div className="pt-4 border-t border-neutral-100">
+                    <div className="text-xs text-neutral-500 font-bold uppercase mb-2">Installment Control</div>
+                    {selectedOrder.isInstallmentUnlocked ? (
+                      <div className="bg-emerald-50 text-emerald-700 px-4 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
+                        <CheckCircle className="w-4 h-4" /> Installments Unlocked
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={handleUnlockInstallment}
+                        disabled={selectedOrder.projectStatus !== 'Delivered'}
+                        className="w-full px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        Unlock Installments
+                      </button>
+                    )}
+                    {selectedOrder.projectStatus !== 'Delivered' && !selectedOrder.isInstallmentUnlocked && (
+                      <p className="text-[10px] text-neutral-500 mt-2 text-center">
+                        Project must be "Delivered" to unlock installments.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Payment Summary */}
             <div className="bg-white rounded-3xl p-6 border border-neutral-100 shadow-sm">
               <h3 className="text-lg font-bold text-neutral-900 mb-6 flex items-center gap-2">
@@ -342,6 +456,37 @@ export function Orders() {
               </div>
             </div>
 
+            {(selectedOrder.payment?.option === 'installment' || selectedOrder.payment?.option?.startsWith('emi')) && selectedOrder.installments && selectedOrder.installments.length > 0 && (
+              <div className="bg-white rounded-3xl p-6 border border-neutral-100 shadow-sm mt-6">
+                <h3 className="text-lg font-bold text-neutral-900 mb-6 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-indigo-600" />
+                  Installment Payments
+                </h3>
+                <div className="space-y-3">
+                  {selectedOrder.installments.map((inst: any) => (
+                    <div key={inst.id} className="p-3 bg-neutral-50 rounded-xl border border-neutral-100 flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-bold text-neutral-900">Installment #{inst.installmentNumber || inst.number}</div>
+                        <div className="text-xs text-neutral-500 font-medium">৳{inst.amount?.toLocaleString()} • {inst.status}</div>
+                        {inst.trxId && <div className="text-[10px] text-indigo-600 font-mono mt-1">TrxID: {inst.trxId}</div>}
+                      </div>
+                      {inst.status === 'Pending Verification' && (
+                        <button 
+                          onClick={() => handleApproveInstallment(inst.id)}
+                          className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold rounded-lg transition-colors"
+                        >
+                          Approve
+                        </button>
+                      )}
+                      {inst.status === 'Paid' && (
+                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {/* Transaction Verification */}
             <div className="bg-white rounded-3xl p-6 border border-neutral-100 shadow-sm">
               <h3 className="text-lg font-bold text-neutral-900 mb-6">Transaction Details</h3>

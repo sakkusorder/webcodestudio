@@ -335,17 +335,7 @@ export function ShowcaseDetails() {
               </div>
             </div>
 
-            {/* Guarantee Card */}
-            <div className="bg-indigo-900 text-white rounded-3xl p-6 shadow-lg overflow-hidden relative">
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <ShieldCheck className="w-24 h-24" />
-              </div>
-              <ShieldCheck className="w-8 h-8 text-indigo-300 mb-4" />
-              <h3 className="text-lg font-bold mb-2">100% Satisfaction</h3>
-              <p className="text-indigo-200 text-sm font-medium leading-relaxed">
-                We guarantee a full refund of your advance payment if you are not satisfied with the initial design drafts.
-              </p>
-            </div>
+
           </div>
         </div>
       </div>

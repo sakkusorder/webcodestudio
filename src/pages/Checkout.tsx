@@ -30,10 +30,13 @@ export default function Checkout() {
   // Payment states
   const [paymentOption, setPaymentOption] = useState<'full' | 'installment'>('full');
   const [installmentMonths, setInstallmentMonths] = useState<6 | 12>(6);
-  // Get minimum downpayment from admin config (fallback to 30)
-  const minDownPaymentPercentage = parseInt(localStorage.getItem('wcs_admin_min_downpayment') || '30', 10);
-  const [downPaymentPercentage, setDownPaymentPercentage] = useState(minDownPaymentPercentage);
+  
+  // Fixed down payment percentage per request
+  const downPaymentPercentage = 20;
+  
   const [paymentMethod, setPaymentMethod] = useState<'bkash' | 'nagad' | 'sslcommerz' | 'card' | 'whatsapp'>('sslcommerz');
+  const [trxId, setTrxId] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     // Both showcase and templates use getStoredTemplates() in this mock app
@@ -59,36 +62,23 @@ export default function Checkout() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleDownPaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value, 10);
-    if (!isNaN(val)) {
-      setDownPaymentPercentage(val);
-    }
-  };
-
-  const validateDownPayment = () => {
-    if (downPaymentPercentage < minDownPaymentPercentage) {
-      setDownPaymentPercentage(minDownPaymentPercentage);
-    }
-    if (downPaymentPercentage > 99) {
-      setDownPaymentPercentage(99);
-    }
-  };
-
   // Calculations
   const websitePrice = product.offerPrice || product.startingPrice || 50000;
-  const downPaymentAmount = paymentOption === 'full' ? 0 : Math.round(websitePrice * (downPaymentPercentage / 100));
-  const payingNow = paymentOption === 'full' ? websitePrice : downPaymentAmount;
-  const remainingAmount = paymentOption === 'full' ? 0 : websitePrice - downPaymentAmount;
-  const monthlyInstallment = remainingAmount > 0 ? Math.round(remainingAmount / installmentMonths) : 0;
+  const downPaymentAmount = Math.round(websitePrice * (downPaymentPercentage / 100));
+  const payingNow = downPaymentAmount; // Both 'full' and 'installment' require 20% down payment initially
+  const remainingAmount = websitePrice - downPaymentAmount;
+  const monthlyInstallment = paymentOption === 'installment' && remainingAmount > 0 ? Math.round(remainingAmount / installmentMonths) : 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (paymentOption === 'installment' && downPaymentPercentage < minDownPaymentPercentage) {
-      alert(`Minimum down payment is ${minDownPaymentPercentage}%`);
+    if (paymentOption === 'installment' && downPaymentPercentage < 20) {
+      alert(`Minimum down payment is 20%`);
       return;
     }
+    
+    setIsProcessing(true);
+    setTimeout(() => {
 
     let installments = [];
     if (paymentOption === 'installment') {
@@ -126,7 +116,8 @@ export default function Checkout() {
         paidNow: payingNow,
         remaining: remainingAmount,
         installmentMonths: paymentOption === 'installment' ? installmentMonths : null,
-        monthlyInstallment: monthlyInstallment
+        monthlyInstallment: monthlyInstallment,
+        transactionId: trxId || (paymentMethod === 'sslcommerz' || paymentMethod === 'card' ? 'GATEWAY_PENDING' : '')
       },
       installments: installments,
       status: 'Pending',
@@ -139,6 +130,7 @@ export default function Checkout() {
 
     alert(`Order Confirmed! Your Order ID is ${newOrder.id}`);
     navigate('/dashboard');
+    }, 1500);
   };
 
   return (
@@ -229,48 +221,27 @@ export default function Checkout() {
                     <input type="radio" name="paymentOption" className="sr-only" checked={paymentOption === 'full'} onChange={() => setPaymentOption('full')} />
                     <Wallet className={cn("w-8 h-8 mb-3", paymentOption === 'full' ? "text-indigo-600" : "text-neutral-400")} />
                     <span className="font-bold text-neutral-900 mb-1">Full Payment</span>
-                    <span className="text-sm text-neutral-500">Pay the entire amount now</span>
+                    <span className="text-sm text-neutral-500">Pay remaining amount fully upon delivery</span>
                   </label>
                   
                   <label className={cn("relative p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center text-center", paymentOption === 'installment' ? "border-indigo-600 bg-indigo-50" : "border-neutral-200 hover:border-indigo-200")}>
                     <input type="radio" name="paymentOption" className="sr-only" checked={paymentOption === 'installment'} onChange={() => setPaymentOption('installment')} />
                     <FileText className={cn("w-8 h-8 mb-3", paymentOption === 'installment' ? "text-indigo-600" : "text-neutral-400")} />
-                    <span className="font-bold text-neutral-900 mb-1">Down Payment + Installment</span>
-                    <span className="text-sm text-neutral-500">Pay advance and remaining in EMI</span>
+                    <span className="font-bold text-neutral-900 mb-1">Down Payment</span>
+                    <span className="text-sm text-neutral-500">Pay remaining amount in installments</span>
                   </label>
+                </div>
+
+                <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-start mb-6">
+                  <CheckCircle className="w-5 h-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-bold text-indigo-900 mb-1">20% Initial Down Payment Required</p>
+                    <p className="text-sm text-indigo-700">A fixed 20% down payment is required to start the project regardless of the payment plan. The remaining 80% will be paid {paymentOption === 'full' ? 'in full upon delivery' : 'in monthly installments after delivery'}.</p>
+                  </div>
                 </div>
 
                 {paymentOption === 'installment' && (
                   <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-200 space-y-6">
-                    <div>
-                      <label className="block text-sm font-bold text-neutral-900 mb-2 flex justify-between">
-                        <span>Down Payment Percentage</span>
-                        <span className="text-indigo-600">{downPaymentPercentage}%</span>
-                      </label>
-                      <div className="flex items-center gap-4">
-                        <input 
-                          type="range" 
-                          min={minDownPaymentPercentage} 
-                          max="99" 
-                          value={downPaymentPercentage} 
-                          onChange={handleDownPaymentChange} 
-                          className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                        />
-                      </div>
-                      <div className="flex items-center gap-4 mt-3">
-                        <input 
-                          type="number" 
-                          min={minDownPaymentPercentage} 
-                          max="99"
-                          value={downPaymentPercentage}
-                          onChange={handleDownPaymentChange}
-                          onBlur={validateDownPayment}
-                          className="w-20 px-3 py-2 bg-white border border-neutral-300 rounded-lg text-center font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
-                        />
-                        <span className="text-sm text-neutral-500">% (Minimum {minDownPaymentPercentage}%)</span>
-                      </div>
-                    </div>
-
                     <div>
                       <label className="block text-sm font-bold text-neutral-900 mb-3">Installment Duration</label>
                       <div className="flex gap-4">
@@ -317,6 +288,32 @@ export default function Checkout() {
                     <span className="font-bold text-sm text-neutral-900">Card</span>
                   </label>
                 </div>
+
+                {paymentMethod === 'bkash' && (
+                  <div className="mt-6 p-6 rounded-xl border border-pink-200 bg-pink-50 text-left animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <p className="text-sm font-semibold text-pink-800 mb-2">bKash Payment Verification</p>
+                    <p className="text-sm text-pink-700 mb-4">Please send <span className="font-bold">৳{payingNow.toLocaleString()}</span> to our Merchant Number: <span className="font-bold">017XXXXXXXX</span>, then enter the Transaction ID below.</p>
+                    <input required type="text" value={trxId} onChange={(e) => setTrxId(e.target.value)} placeholder="Enter TrxID (e.g. 9X2B3C)" className="w-full px-4 py-3 rounded-lg border border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white transition-all" />
+                  </div>
+                )}
+                {paymentMethod === 'nagad' && (
+                  <div className="mt-6 p-6 rounded-xl border border-orange-200 bg-orange-50 text-left animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <p className="text-sm font-semibold text-orange-800 mb-2">Nagad Payment Verification</p>
+                    <p className="text-sm text-orange-700 mb-4">Please send <span className="font-bold">৳{payingNow.toLocaleString()}</span> to our Merchant Number: <span className="font-bold">016XXXXXXXX</span>, then enter the Transaction ID below.</p>
+                    <input required type="text" value={trxId} onChange={(e) => setTrxId(e.target.value)} placeholder="Enter TrxID (e.g. 7Y4Z5A)" className="w-full px-4 py-3 rounded-lg border border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white transition-all" />
+                  </div>
+                )}
+                {(paymentMethod === 'sslcommerz' || paymentMethod === 'card') && (
+                  <div className="mt-6 p-6 rounded-xl border border-indigo-200 bg-indigo-50 text-left animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <p className="text-sm font-bold text-indigo-900">Secure Online Payment</p>
+                    </div>
+                    <p className="text-sm text-indigo-700 pl-11">You will be redirected to the secure payment gateway to complete your payment of <span className="font-bold">৳{payingNow.toLocaleString()}</span> after clicking Confirm Order.</p>
+                  </div>
+                )}
               </div>
 
             </form>
@@ -338,25 +335,27 @@ export default function Checkout() {
               <div className="space-y-4 text-sm mb-6 pb-6 border-b border-neutral-100">
                 <div className="flex justify-between">
                   <span className="text-neutral-600">Website Price</span>
-                  <span className="font-semibold text-neutral-900">৳${websitePrice.toLocaleString()}</span>
+                  <span className="font-semibold text-neutral-900">৳{websitePrice.toLocaleString()}</span>
                 </div>
+                
+                <div className="flex justify-between text-indigo-600 font-medium">
+                  <span>Down Payment ({downPaymentPercentage}%)</span>
+                  <span>৳{downPaymentAmount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-600">Remaining Amount</span>
+                  <span className="font-semibold text-neutral-900">৳{remainingAmount.toLocaleString()}</span>
+                </div>
+
                 {paymentOption === 'installment' && (
                   <>
-                    <div className="flex justify-between text-indigo-600 font-medium">
-                      <span>Down Payment ({downPaymentPercentage}%)</span>
-                      <span>৳${downPaymentAmount.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-600">Remaining Amount</span>
-                      <span className="font-semibold text-neutral-900">৳${remainingAmount.toLocaleString()}</span>
-                    </div>
                     <div className="flex justify-between">
                       <span className="text-neutral-600">Installment Duration</span>
                       <span className="font-semibold text-neutral-900">{installmentMonths} Months</span>
                     </div>
                     <div className="flex justify-between text-orange-600 font-medium">
                       <span>Monthly EMI</span>
-                      <span>৳${monthlyInstallment.toLocaleString()}/mo</span>
+                      <span>৳{monthlyInstallment.toLocaleString()}/mo</span>
                     </div>
                   </>
                 )}
@@ -364,7 +363,7 @@ export default function Checkout() {
 
               <div className="flex justify-between items-center mb-8">
                 <span className="text-base font-bold text-neutral-900">Total Payable Now</span>
-                <span className="text-2xl font-black text-indigo-600">৳${payingNow.toLocaleString()}</span>
+                <span className="text-2xl font-black text-indigo-600">৳{payingNow.toLocaleString()}</span>
               </div>
 
               <button 
